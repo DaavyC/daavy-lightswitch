@@ -17,3 +17,24 @@
   margin: 5px 0;
   border: none;
 }
+
+.daavy-lightswitch-settings-reset-row {
+  margin: 0 0 18px;
+  border: none;
+}
+
+.daavy-lightswitch-settings-reset-row label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.daavy-lightswitch-settings-reset-hint {
+  opacity: 0.55;
+  font-size: var(--font-size-12, 12px);
+}
+
+.daavy-lightswitch-settings-reset {
+  width: 100%;
+  min-height: 34px;
+}
