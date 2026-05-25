@@ -10,24 +10,33 @@ export function registerAmbientLightConfigHooks() {
 }
 
 export function setDefaultPlayerToggleFlag(document, data) {
-  const hasValue = foundry.utils.hasProperty(data, FLAG_PATH);
-  if (!hasValue) {
-    foundry.utils.setProperty(data, FLAG_PATH, getPlayerToggleDefault());
-    return;
-  }
+  const currentValue = getFlagUpdateValue(data);
+  const value = currentValue === undefined ? getPlayerToggleDefault() : toBoolean(currentValue);
 
-  foundry.utils.setProperty(data, FLAG_PATH, toBoolean(foundry.utils.getProperty(data, FLAG_PATH)));
+  document.updateSource?.({ [FLAG_PATH]: value });
+  foundry.utils.setProperty(data, FLAG_PATH, value);
 }
 
 export function normalizePlayerToggleFlag(document, change) {
-  if (!foundry.utils.hasProperty(change, FLAG_PATH)) return;
-  foundry.utils.setProperty(change, FLAG_PATH, toBoolean(foundry.utils.getProperty(change, FLAG_PATH)));
+  let normalized = false;
+
+  if (Object.hasOwn(change, FLAG_PATH)) {
+    change[FLAG_PATH] = toBoolean(change[FLAG_PATH]);
+    normalized = true;
+  }
+
+  if (foundry.utils.hasProperty(change, FLAG_PATH)) {
+    foundry.utils.setProperty(change, FLAG_PATH, toBoolean(foundry.utils.getProperty(change, FLAG_PATH)));
+    normalized = true;
+  }
+
+  if (!normalized) return;
 }
 
 export function addPlayerToggleField(app, html) {
   if (!game.user.isGM) return;
 
-  const element = html instanceof HTMLElement ? html : html?.[0];
+  const element = typeof HTMLElement !== "undefined" && html instanceof HTMLElement ? html : html?.[0];
   if (!element) return;
 
   const currentValue = getDocumentPlayerToggleValue(app.document);
@@ -37,9 +46,6 @@ export function addPlayerToggleField(app, html) {
   const target = findFieldTarget(element);
 
   if (!target) return;
-  inputs.checkbox.addEventListener("change", () => {
-    app.document.setFlag(MODULE_ID, FLAGS.PLAYER_TOGGLE_ENABLED, inputs.checkbox.checked);
-  });
   group.prepend(inputs.hidden);
   target.append(group);
   app.setPosition?.();
@@ -101,6 +107,12 @@ function getDocumentPlayerToggleValue(document) {
   const value = document.getFlag(MODULE_ID, FLAGS.PLAYER_TOGGLE_ENABLED);
   if (value === undefined) return undefined;
   return toBoolean(value);
+}
+
+function getFlagUpdateValue(data) {
+  if (Object.hasOwn(data, FLAG_PATH)) return data[FLAG_PATH];
+  if (!foundry.utils.hasProperty(data, FLAG_PATH)) return undefined;
+  return foundry.utils.getProperty(data, FLAG_PATH);
 }
 
 function toBoolean(value) {
