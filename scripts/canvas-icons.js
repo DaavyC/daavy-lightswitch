@@ -248,24 +248,113 @@ function createButtonBackground(off) {
   return graphics;
 }
 
-function createButtonIcon(off) {
-  const style = {
-    fill: off ? 0xb8b8b8 : 0xffd76a,
-    fontFamily: "Arial",
-    fontSize: 18,
-    fontWeight: "700"
-  };
-  const text = createPixiText(off ? "○" : "●", style);
+export function createButtonIcon(off) {
+  const icon = new PIXI.Graphics();
+  const glassColor = off ? 0x777777 : 0xffd76a;
+  const glassStroke = off ? 0xb8b8b8 : 0xfff0a3;
+  const baseColor = off ? 0x555555 : 0x8d7840;
+  const baseStroke = off ? 0xa0a0a0 : 0xffd76a;
 
-  text.anchor.set(0.5);
-  return text;
-}
+  if (!off) {
+    drawCircle(icon, 0, -3, 11, 0xffd76a, 0.16);
+    drawCircle(icon, 0, -3, 7, 0xffe8a0, 0.2);
+  }
 
-function createPixiText(text, style) {
-  return new PIXI.Text(text, style);
+  drawEllipse(icon, 0, -5, 7, 8, glassColor, off ? 0.42 : 0.95, glassStroke, 1.6, off ? 0.85 : 0.95);
+  drawPolygon(icon, [-4, 2, 4, 2, 3, 6, -3, 6], glassColor, off ? 0.42 : 0.86, glassStroke, 1.2, off ? 0.7 : 0.85);
+
+  if (!off) {
+    drawLine(icon, [-3, -4, -1, -1, 1, -4, 3, -1], 0x7a5a00, 1.25, 0.72);
+    drawCircle(icon, -2.6, -8.2, 1.5, 0xffffff, 0.58);
+  }
+
+  drawRoundedRect(icon, -4.8, 5, 9.6, 4.2, 1.2, baseColor, 0.95, baseStroke, 1.1, 0.86);
+  drawLine(icon, [-3.4, 6.5, 3.4, 6.5], off ? 0xb8b8b8 : 0xffef9b, 0.9, 0.72);
+  drawRoundedRect(icon, -3.4, 9, 6.8, 2.3, 0.8, baseColor, 0.9, baseStroke, 0.8, 0.7);
+
+  return icon;
 }
 
 function getInverseCanvasScale() {
   const scale = canvas.stage?.scale?.x || 1;
   return 1 / scale;
+}
+
+function drawCircle(graphics, x, y, radius, fillColor, fillAlpha, strokeColor, strokeWidth = 0, strokeAlpha = 1) {
+  if (typeof graphics.circle === "function") {
+    graphics.circle(x, y, radius).fill({ color: fillColor, alpha: fillAlpha });
+    if (strokeColor !== undefined && strokeWidth > 0) {
+      graphics.stroke({ color: strokeColor, alpha: strokeAlpha, width: strokeWidth });
+    }
+    return;
+  }
+
+  graphics.beginFill(fillColor, fillAlpha);
+  if (strokeColor !== undefined && strokeWidth > 0) {
+    graphics.lineStyle(strokeWidth, strokeColor, strokeAlpha);
+  }
+  graphics.drawCircle(x, y, radius);
+  graphics.endFill();
+}
+
+function drawEllipse(graphics, x, y, width, height, fillColor, fillAlpha, strokeColor, strokeWidth, strokeAlpha) {
+  if (typeof graphics.ellipse === "function") {
+    graphics
+      .ellipse(x, y, width, height)
+      .fill({ color: fillColor, alpha: fillAlpha })
+      .stroke({ color: strokeColor, alpha: strokeAlpha, width: strokeWidth });
+    return;
+  }
+
+  graphics.beginFill(fillColor, fillAlpha);
+  graphics.lineStyle(strokeWidth, strokeColor, strokeAlpha);
+  graphics.drawEllipse(x, y, width, height);
+  graphics.endFill();
+}
+
+function drawRoundedRect(graphics, x, y, width, height, radius, fillColor, fillAlpha, strokeColor, strokeWidth, strokeAlpha) {
+  if (typeof graphics.roundRect === "function") {
+    graphics
+      .roundRect(x, y, width, height, radius)
+      .fill({ color: fillColor, alpha: fillAlpha })
+      .stroke({ color: strokeColor, alpha: strokeAlpha, width: strokeWidth });
+    return;
+  }
+
+  graphics.beginFill(fillColor, fillAlpha);
+  graphics.lineStyle(strokeWidth, strokeColor, strokeAlpha);
+  graphics.drawRoundedRect(x, y, width, height, radius);
+  graphics.endFill();
+}
+
+function drawPolygon(graphics, points, fillColor, fillAlpha, strokeColor, strokeWidth, strokeAlpha) {
+  if (typeof graphics.poly === "function") {
+    graphics
+      .poly(points)
+      .fill({ color: fillColor, alpha: fillAlpha })
+      .stroke({ color: strokeColor, alpha: strokeAlpha, width: strokeWidth });
+    return;
+  }
+
+  graphics.beginFill(fillColor, fillAlpha);
+  graphics.lineStyle(strokeWidth, strokeColor, strokeAlpha);
+  graphics.drawPolygon(points);
+  graphics.endFill();
+}
+
+function drawLine(graphics, points, color, width, alpha) {
+  if (typeof graphics.moveTo === "function" && typeof graphics.stroke === "function") {
+    graphics.moveTo(points[0], points[1]);
+    for (let index = 2; index < points.length; index += 2) {
+      graphics.lineTo(points[index], points[index + 1]);
+    }
+    graphics.stroke({ color, alpha, width });
+    return;
+  }
+
+  graphics.lineStyle(width, color, alpha);
+  graphics.moveTo(points[0], points[1]);
+  for (let index = 2; index < points.length; index += 2) {
+    graphics.lineTo(points[index], points[index + 1]);
+  }
 }
