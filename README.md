@@ -29,4 +29,10 @@ A simple module for **Foundry VTT** that lets players turn map lights on and off
 
 ---
 
+## 📚 Credits
+
+- **[Light Switch](https://foundryvtt.com/packages/light-switch)** by TheRipper93 — inspiration only.
+
+---
+
 > This module was built with AI-assisted development.
