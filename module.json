@@ -1,7 +1,7 @@
 {
   "id": "daavy-lightswitch",
   "title": "Daavy's Lightswitch",
-  "description": "Let players toggle permitted Ambient Lights from the canvas.",
+  "description": "Allows players to turn permitted lights on or off.",
   "version": "1.0.0",
   "type": "module",
   "license": "LICENSE",
