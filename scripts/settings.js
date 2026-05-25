@@ -17,6 +17,14 @@ const SETTINGS_DEFAULTS = {
 };
 
 export function registerSettings() {
+  game.settings.registerMenu(MODULE_ID, "resetSettings", {
+    name: `${MODULE_ID}.settings.reset.name`,
+    hint: `${MODULE_ID}.settings.reset.hint`,
+    icon: "fas fa-layer-group",
+    type: ResetSettingsDialog,
+    restricted: true
+  });
+
   game.settings.register(MODULE_ID, SETTINGS.PLAYER_TOGGLE_DEFAULT, {
     name: `${MODULE_ID}.settings.playerToggleDefault.name`,
     hint: `${MODULE_ID}.settings.playerToggleDefault.hint`,
@@ -70,8 +78,6 @@ export function organizeSettingsConfig(app, html) {
   for (const [groupKey, settingKeys] of Object.entries(SETTINGS_GROUPS)) {
     groupSettingRows(container, doc, groupKey, settingKeys);
   }
-
-  injectResetButton(app, container, doc);
 }
 
 function groupSettingRows(container, doc, groupKey, settingKeys) {
@@ -104,45 +110,6 @@ function createGroupFieldset(doc, groupKey) {
   return fieldset;
 }
 
-function injectResetButton(app, container, doc) {
-  removeExistingResetRows(container);
-
-  const resetRow = doc.createElement("div");
-  resetRow.className = "form-group daavy-lightswitch-settings-reset-row";
-
-  const label = doc.createElement("label");
-
-  const labelIcon = doc.createElement("i");
-  labelIcon.className = "fa-solid fa-globe";
-  label.appendChild(labelIcon);
-  label.appendChild(doc.createTextNode(game.i18n.localize(`${MODULE_ID}.settings.reset.name`)));
-
-  const hint = doc.createElement("p");
-  hint.className = "hint";
-  hint.textContent = game.i18n.localize(`${MODULE_ID}.settings.reset.hint`);
-
-  const fields = doc.createElement("div");
-  fields.className = "form-fields";
-
-  const button = doc.createElement("button");
-  button.type = "button";
-  button.className = "daavy-lightswitch-settings-reset";
-  button.title = game.i18n.localize(`${MODULE_ID}.settings.reset.name`);
-  button.setAttribute("aria-label", game.i18n.localize(`${MODULE_ID}.settings.reset.name`));
-
-  const icon = doc.createElement("i");
-  icon.className = "fa-solid fa-layer-group";
-  button.appendChild(icon);
-
-  button.addEventListener("click", () => confirmResetSettings(app));
-
-  fields.appendChild(button);
-  resetRow.appendChild(label);
-  resetRow.appendChild(hint);
-  resetRow.appendChild(fields);
-  insertBeforeFirstGroup(container, resetRow);
-}
-
 async function resetSettingsToDefault(app) {
   await Promise.all(Object.entries(SETTINGS_DEFAULTS).map(([key, value]) => (
     game.settings.set(MODULE_ID, key, value)
@@ -150,11 +117,21 @@ async function resetSettingsToDefault(app) {
   app?.render?.(true);
 }
 
-export async function confirmResetSettings(app) {
+export async function confirmResetSettings(app = game.settings.sheet) {
   const confirmed = await showResetConfirmation();
   if (!confirmed) return;
 
   await resetSettingsToDefault(app);
+}
+
+export class ResetSettingsDialog extends (globalThis.FormApplication ?? class {}) {
+  constructor(...args) {
+    super(...args);
+
+    return {
+      render: () => confirmResetSettings(game.settings.sheet)
+    };
+  }
 }
 
 async function showResetConfirmation() {
@@ -189,67 +166,6 @@ async function showResetConfirmation() {
       defaultYes: false
     });
   });
-}
-
-function removeExistingResetRows(container) {
-  const rows = typeof container.querySelectorAll === "function"
-    ? [...container.querySelectorAll(".daavy-lightswitch-settings-reset-row")]
-    : findElementsByClass(container, "daavy-lightswitch-settings-reset-row");
-
-  for (const row of rows) {
-    row.remove();
-  }
-}
-
-function insertBeforeFirstGroup(container, element) {
-  const firstGroup = getSettingsGroups(container)[0];
-
-  if (!firstGroup) {
-    container.appendChild(element);
-    return;
-  }
-
-  if (typeof firstGroup.before === "function") {
-    firstGroup.before(element);
-    return;
-  }
-
-  const parent = firstGroup.parentElement ?? container;
-  const index = parent.children.indexOf(firstGroup);
-  parent.children.splice(index, 0, element);
-  element.parentElement = parent;
-}
-
-function getSettingsGroups(container) {
-  if (typeof container.querySelectorAll === "function") {
-    return [...container.querySelectorAll(".daavy-lightswitch-settings-group")];
-  }
-
-  const groups = [];
-  collectSettingsGroups(container, groups);
-  return groups;
-}
-
-function collectSettingsGroups(element, groups) {
-  if (element.className?.split(" ").includes("daavy-lightswitch-settings-group")) {
-    groups.push(element);
-  }
-
-  for (const child of element.children ?? []) {
-    collectSettingsGroups(child, groups);
-  }
-}
-
-function findElementsByClass(element, className, results = []) {
-  if (element.className?.split(" ").includes(className)) {
-    results.push(element);
-  }
-
-  for (const child of element.children ?? []) {
-    findElementsByClass(child, className, results);
-  }
-
-  return results;
 }
 
 function hasClassAncestor(element, className) {
