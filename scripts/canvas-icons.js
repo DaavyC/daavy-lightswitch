@@ -10,6 +10,7 @@ const SWITCH_LAYER_NAME = "daavyLightswitchLayer";
 
 let switchLayer;
 let canvasClickHandler;
+let pendingRefresh = null;
 
 export function registerCanvasIconHooks() {
   Hooks.on("canvasReady", refreshLightSwitches);
@@ -20,17 +21,32 @@ export function registerCanvasIconHooks() {
   Hooks.on("deleteAmbientLight", refreshLightSwitches);
   Hooks.on("controlToken", refreshLightSwitches);
   Hooks.on("updateToken", refreshLightSwitches);
+  Hooks.on("renderSceneControls", scheduleLightSwitchRefresh);
+}
+
+export function scheduleLightSwitchRefresh() {
+  if (pendingRefresh !== null) return;
+
+  pendingRefresh = setTimeout(() => {
+    pendingRefresh = null;
+    refreshLightSwitches();
+  }, 0);
 }
 
 export function refreshLightSwitches() {
-  if (!canvas?.ready || !globalThis.PIXI) {
-    debugLog("refresh skipped", { canvasReady: canvas?.ready, hasPixi: Boolean(globalThis.PIXI) });
+  if (!globalThis.canvas?.ready || !globalThis.PIXI) {
+    debugLog("refresh skipped", { canvasReady: globalThis.canvas?.ready, hasPixi: Boolean(globalThis.PIXI) });
     return;
   }
 
   ensureSwitchLayer();
   installCanvasClickHandler();
   switchLayer.removeChildren().forEach((child) => child.destroy({ children: true }));
+
+  if (isLightingControlsActive()) {
+    debugLog("refresh skipped for lighting controls");
+    return;
+  }
 
   if (game.user.isGM && !shouldShowForGM()) {
     debugLog("refresh skipped for GM");
@@ -78,6 +94,7 @@ export function getSwitchVisibilityReason(placeable) {
   const showAsGM = game.user.isGM && shouldShowForGM();
 
   if (!light) return { visible: false, reason: "missing-light" };
+  if (isLightingControlsActive()) return { visible: false, reason: "lighting-controls-active", lightId: light.id };
   if (light.hidden && !isLightOff(light)) return { visible: false, reason: "hidden", lightId: light.id };
   if (!isToggleAllowed(light)) return { visible: false, reason: "toggle-disabled", lightId: light.id };
   if (showAsGM) return { visible: true, reason: "visible-for-gm", lightId: light.id };
@@ -105,6 +122,10 @@ export function canPlayerSeeLight(placeable) {
   }
 
   return true;
+}
+
+export function isLightingControlsActive() {
+  return canvas?.lighting?.active === true || ui?.controls?.control?.name === "lighting";
 }
 
 function createSwitchButton(light) {
@@ -138,6 +159,7 @@ function installCanvasClickHandler() {
   if (!canvasElement || canvasClickHandler) return;
 
   canvasClickHandler = (event) => {
+    if (isLightingControlsActive()) return;
     if (game.user.isGM && !shouldShowForGM()) return;
 
     const light = getLightAtClientPoint(event.clientX, event.clientY);
