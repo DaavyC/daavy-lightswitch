@@ -117,10 +117,9 @@ function injectResetButton(app, container, doc) {
   label.appendChild(labelIcon);
   label.appendChild(doc.createTextNode(game.i18n.localize(`${MODULE_ID}.settings.reset.name`)));
 
-  const hint = doc.createElement("i");
-  hint.className = "fa-solid fa-question-circle daavy-lightswitch-settings-reset-hint";
-  hint.title = game.i18n.localize(`${MODULE_ID}.settings.reset.hint`);
-  label.appendChild(hint);
+  const hint = doc.createElement("p");
+  hint.className = "hint";
+  hint.textContent = game.i18n.localize(`${MODULE_ID}.settings.reset.hint`);
 
   const fields = doc.createElement("div");
   fields.className = "form-fields";
@@ -139,6 +138,7 @@ function injectResetButton(app, container, doc) {
 
   fields.appendChild(button);
   resetRow.appendChild(label);
+  resetRow.appendChild(hint);
   resetRow.appendChild(fields);
   insertBeforeFirstGroup(container, resetRow);
 }
