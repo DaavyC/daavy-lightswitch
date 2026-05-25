@@ -1,0 +1,19 @@
+.daavy-lightswitch-settings-group {
+  border: 1px solid var(--color-border-light-primary, #a1a1a1);
+  border-radius: 5px;
+  margin: 15px 0;
+  padding: 10px;
+  display: block;
+}
+
+.daavy-lightswitch-settings-group-title {
+  padding: 0 5px;
+  font-weight: bold;
+  font-size: var(--font-size-14, 14px);
+  color: var(--color-text-primary, #f0f0e0);
+}
+
+.daavy-lightswitch-settings-row {
+  margin: 5px 0;
+  border: none;
+}

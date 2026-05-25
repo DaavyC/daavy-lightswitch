@@ -1,12 +1,13 @@
 {
-  "daavy-lightswitch.settings.playerToggleDefault.name": "Allow players to toggle new lights",
-  "daavy-lightswitch.settings.playerToggleDefault.hint": "When enabled, newly created lights can be turned on and off by players unless the GM disables the option on that light.",
+  "daavy-lightswitch.settings.playerToggleDefault.name": "Player toggle by default",
+  "daavy-lightswitch.settings.playerToggleDefault.hint": "New lights can be toggled by players unless disabled on the light.",
   "daavy-lightswitch.settings.debug.name": "Debug mode",
-  "daavy-lightswitch.settings.debug.hint": "Log detailed light switch diagnostics to the browser console and show debug notifications.",
-  "daavy-lightswitch.settings.showForGM.name": "Show light switch buttons for GMs",
-  "daavy-lightswitch.settings.showForGM.hint": "When enabled, GMs also see the canvas buttons for lights that allow player switching.",
-  "daavy-lightswitch.ambientLightConfig.playerToggleEnabled.label": "Allow player light switch",
-  "daavy-lightswitch.ambientLightConfig.playerToggleEnabled.hint": "Players can click this light on the canvas to turn it on or off.",
+  "daavy-lightswitch.settings.debug.hint": "Log diagnostics and show debug notices.",
+  "daavy-lightswitch.settings.showForGM.name": "Show buttons for GMs",
+  "daavy-lightswitch.settings.showForGM.hint": "GMs also see light switch buttons.",
+  "daavy-lightswitch.settings.groups.Settings": "Settings",
+  "daavy-lightswitch.ambientLightConfig.playerToggleEnabled.label": "Player light switch",
+  "daavy-lightswitch.ambientLightConfig.playerToggleEnabled.hint": "Players can click this light to toggle it.",
   "daavy-lightswitch.canvas.turnOn": "Turn light on",
   "daavy-lightswitch.canvas.turnOff": "Turn light off"
 }

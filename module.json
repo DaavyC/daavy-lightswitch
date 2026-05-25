@@ -24,6 +24,9 @@
   "esmodules": [
     "main.js"
   ],
+  "styles": [
+    "styles/main.css"
+  ],
   "languages": [
     {
       "lang": "en",
