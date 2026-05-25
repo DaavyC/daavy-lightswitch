@@ -1,3 +1,4 @@
+import { isTruthyValue } from "./booleans.js";
 import { FLAGS, MODULE_ID } from "./constants.js";
 import { debugLog } from "./debug.js";
 
@@ -15,8 +16,7 @@ export function getSourceConfig(light) {
 }
 
 export function isToggleAllowed(light) {
-  const value = light?.getFlag?.(MODULE_ID, FLAGS.PLAYER_TOGGLE_ENABLED);
-  return value === true || value === "true" || value === 1 || value === "1" || value === "on";
+  return isTruthyValue(light?.getFlag?.(MODULE_ID, FLAGS.PLAYER_TOGGLE_ENABLED));
 }
 
 export function isLightOff(light) {
@@ -47,11 +47,6 @@ export function buildTurnOnUpdate(light) {
   }
 
   return update;
-}
-
-export function buildLightOffUpdate(light) {
-  if (!isToggleAllowed(light) || isLightOff(light)) return null;
-  return buildTurnOffUpdate(light);
 }
 
 export function buildToggleUpdate(light) {

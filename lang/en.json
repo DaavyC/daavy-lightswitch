@@ -14,7 +14,5 @@
   "daavy-lightswitch.settings.reset.confirm.yes": "Reset Module Settings",
   "daavy-lightswitch.settings.reset.confirm.no": "Cancel",
   "daavy-lightswitch.ambientLightConfig.playerToggleEnabled.label": "Player light switch",
-  "daavy-lightswitch.ambientLightConfig.playerToggleEnabled.hint": "Let players toggle this light.",
-  "daavy-lightswitch.canvas.turnOn": "Turn light on",
-  "daavy-lightswitch.canvas.turnOff": "Turn light off"
+  "daavy-lightswitch.ambientLightConfig.playerToggleEnabled.hint": "Let players toggle this light."
 }

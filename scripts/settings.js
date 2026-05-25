@@ -16,7 +16,19 @@ const SETTINGS_DEFAULTS = {
   [SETTINGS.DEBUG]: false
 };
 
+const SETTING_DEFINITIONS = [
+  { key: SETTINGS.PLAYER_TOGGLE_DEFAULT, defaultValue: true },
+  { key: SETTINGS.DEBUG, defaultValue: false },
+  { key: SETTINGS.SHOW_FOR_GM, defaultValue: false }
+];
+
 export function registerSettings() {
+  registerResetMenu();
+  SETTING_DEFINITIONS.forEach(registerBooleanSetting);
+  Hooks.on("renderSettingsConfig", organizeSettingsConfig);
+}
+
+function registerResetMenu() {
   game.settings.registerMenu(MODULE_ID, "resetSettings", {
     name: `${MODULE_ID}.settings.reset.name`,
     hint: `${MODULE_ID}.settings.reset.hint`,
@@ -24,35 +36,17 @@ export function registerSettings() {
     type: ResetSettingsDialog,
     restricted: true
   });
+}
 
-  game.settings.register(MODULE_ID, SETTINGS.PLAYER_TOGGLE_DEFAULT, {
-    name: `${MODULE_ID}.settings.playerToggleDefault.name`,
-    hint: `${MODULE_ID}.settings.playerToggleDefault.hint`,
+function registerBooleanSetting({ key, defaultValue }) {
+  game.settings.register(MODULE_ID, key, {
+    name: `${MODULE_ID}.settings.${key}.name`,
+    hint: `${MODULE_ID}.settings.${key}.hint`,
     scope: "world",
     config: true,
     type: Boolean,
-    default: true
+    default: defaultValue
   });
-
-  game.settings.register(MODULE_ID, SETTINGS.DEBUG, {
-    name: `${MODULE_ID}.settings.debug.name`,
-    hint: `${MODULE_ID}.settings.debug.hint`,
-    scope: "world",
-    config: true,
-    type: Boolean,
-    default: false
-  });
-
-  game.settings.register(MODULE_ID, SETTINGS.SHOW_FOR_GM, {
-    name: `${MODULE_ID}.settings.showForGM.name`,
-    hint: `${MODULE_ID}.settings.showForGM.hint`,
-    scope: "world",
-    config: true,
-    type: Boolean,
-    default: false
-  });
-
-  Hooks.on("renderSettingsConfig", organizeSettingsConfig);
 }
 
 export function getPlayerToggleDefault() {
@@ -83,8 +77,7 @@ export function organizeSettingsConfig(app, html) {
 function groupSettingRows(container, doc, groupKey, settingKeys) {
   const rows = settingKeys
     .map((key) => findSettingRow(container, key))
-    .filter((row) => row && !hasClassAncestor(row, "daavy-lightswitch-settings-group"))
-    .filter(Boolean);
+    .filter(isUngroupedSettingRow);
 
   if (!rows.length) return;
 
@@ -96,6 +89,10 @@ function groupSettingRows(container, doc, groupKey, settingKeys) {
     row.classList.add("daavy-lightswitch-settings-row");
     fieldset.appendChild(row);
   }
+}
+
+function isUngroupedSettingRow(row) {
+  return row && !hasClassAncestor(row, "daavy-lightswitch-settings-group");
 }
 
 function createGroupFieldset(doc, groupKey) {
@@ -135,37 +132,42 @@ export class ResetSettingsDialog extends (globalThis.FormApplication ?? class {}
 }
 
 async function showResetConfirmation() {
-  const title = game.i18n.localize(`${MODULE_ID}.settings.reset.confirm.title`);
-  const content = `<p>${game.i18n.localize(`${MODULE_ID}.settings.reset.confirm.content`)}</p>`;
-  const yes = {
-    action: "yes",
-    icon: "fa-solid fa-check",
-    label: game.i18n.localize(`${MODULE_ID}.settings.reset.confirm.yes`)
-  };
-  const no = {
-    action: "no",
-    icon: "fa-solid fa-xmark",
-    label: game.i18n.localize(`${MODULE_ID}.settings.reset.confirm.no`)
-  };
+  const options = getResetDialogOptions();
 
   if (globalThis.foundry?.applications?.api?.DialogV2) {
-    return globalThis.foundry.applications.api.DialogV2.confirm({
-      window: { title },
-      content,
-      yes,
-      no
-    });
+    return globalThis.foundry.applications.api.DialogV2.confirm(options);
   }
 
   return new Promise((resolve) => {
     globalThis.Dialog.confirm({
-      title,
-      content,
+      title: options.window.title,
+      content: options.content,
       yes: () => resolve(true),
       no: () => resolve(false),
       defaultYes: false
     });
   });
+}
+
+function getResetDialogOptions() {
+  return {
+    window: { title: localizeReset("title") },
+    content: `<p>${localizeReset("content")}</p>`,
+    yes: {
+      action: "yes",
+      icon: "fa-solid fa-check",
+      label: localizeReset("yes")
+    },
+    no: {
+      action: "no",
+      icon: "fa-solid fa-xmark",
+      label: localizeReset("no")
+    }
+  };
+}
+
+function localizeReset(key) {
+  return game.i18n.localize(`${MODULE_ID}.settings.reset.confirm.${key}`);
 }
 
 function hasClassAncestor(element, className) {

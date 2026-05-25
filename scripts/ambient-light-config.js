@@ -1,3 +1,4 @@
+import { isTruthyValue } from "./booleans.js";
 import { FLAGS, MODULE_ID } from "./constants.js";
 import { getPlayerToggleDefault } from "./settings.js";
 
@@ -11,26 +12,25 @@ export function registerAmbientLightConfigHooks() {
 
 export function setDefaultPlayerToggleFlag(document, data) {
   const currentValue = getFlagUpdateValue(data);
-  const value = currentValue === undefined ? getPlayerToggleDefault() : toBoolean(currentValue);
+  const value = currentValue === undefined ? getPlayerToggleDefault() : isTruthyValue(currentValue);
 
   document.updateSource?.({ [FLAG_PATH]: value });
   foundry.utils.setProperty(data, FLAG_PATH, value);
 }
 
 export function normalizePlayerToggleFlag(document, change) {
-  let normalized = false;
+  normalizeFlattenedFlag(change);
+  normalizeNestedFlag(change);
+}
 
-  if (Object.hasOwn(change, FLAG_PATH)) {
-    change[FLAG_PATH] = toBoolean(change[FLAG_PATH]);
-    normalized = true;
-  }
+function normalizeFlattenedFlag(change) {
+  if (Object.hasOwn(change, FLAG_PATH)) change[FLAG_PATH] = isTruthyValue(change[FLAG_PATH]);
+}
 
+function normalizeNestedFlag(change) {
   if (foundry.utils.hasProperty(change, FLAG_PATH)) {
-    foundry.utils.setProperty(change, FLAG_PATH, toBoolean(foundry.utils.getProperty(change, FLAG_PATH)));
-    normalized = true;
+    foundry.utils.setProperty(change, FLAG_PATH, isTruthyValue(foundry.utils.getProperty(change, FLAG_PATH)));
   }
-
-  if (!normalized) return;
 }
 
 export function addPlayerToggleField(app, html) {
@@ -72,15 +72,20 @@ function createBooleanInputs(checked) {
 }
 
 function createFormGroup(input) {
-  if (foundry.applications?.fields?.createFormGroup) {
-    return foundry.applications.fields.createFormGroup({
-      input,
-      label: `${MODULE_ID}.ambientLightConfig.playerToggleEnabled.label`,
-      hint: `${MODULE_ID}.ambientLightConfig.playerToggleEnabled.hint`,
-      localize: true
-    });
-  }
+  if (foundry.applications?.fields?.createFormGroup) return createFoundryFormGroup(input);
+  return createFallbackFormGroup(input);
+}
 
+function createFoundryFormGroup(input) {
+  return foundry.applications.fields.createFormGroup({
+    input,
+    label: `${MODULE_ID}.ambientLightConfig.playerToggleEnabled.label`,
+    hint: `${MODULE_ID}.ambientLightConfig.playerToggleEnabled.hint`,
+    localize: true
+  });
+}
+
+function createFallbackFormGroup(input) {
   const group = document.createElement("div");
   group.className = "form-group";
 
@@ -106,21 +111,11 @@ function findFieldTarget(element) {
 function getDocumentPlayerToggleValue(document) {
   const value = document.getFlag(MODULE_ID, FLAGS.PLAYER_TOGGLE_ENABLED);
   if (value === undefined) return undefined;
-  return toBoolean(value);
+  return isTruthyValue(value);
 }
 
 function getFlagUpdateValue(data) {
   if (Object.hasOwn(data, FLAG_PATH)) return data[FLAG_PATH];
   if (!foundry.utils.hasProperty(data, FLAG_PATH)) return undefined;
   return foundry.utils.getProperty(data, FLAG_PATH);
-}
-
-function toBoolean(value) {
-  if (Array.isArray(value)) return value.some((entry) => toBoolean(entry));
-
-  if (value === true || value === "true" || value === 1 || value === "1" || value === "on") {
-    return true;
-  }
-
-  return false;
 }

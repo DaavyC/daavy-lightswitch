@@ -1,4 +1,5 @@
-import { MODULE_ID } from "./constants.js";
+import { isTruthyValue } from "./booleans.js";
+import { FLAGS, MODULE_ID, QUERY_NAMES } from "./constants.js";
 import { isDebugEnabled } from "./settings.js";
 
 export function debugLog(message, data = {}) {
@@ -20,42 +21,56 @@ export function registerDebugApi() {
 
 function snapshot() {
   const layer = findSwitchLayer();
-  const lights = Array.from(canvas?.lighting?.placeables ?? []).map((placeable) => ({
-    id: placeable.document.id,
-    x: placeable.document.x,
-    y: placeable.document.y,
-    hidden: placeable.document.hidden,
-    visible: placeable.visible,
-    renderable: placeable.renderable,
-    toggleAllowed: isFlagTruthy(placeable.document.getFlag(MODULE_ID, "playerToggleEnabled")),
-    isOff: placeable.document.getFlag(MODULE_ID, "isOff") === true,
-    flag: placeable.document.getFlag(MODULE_ID, "playerToggleEnabled")
-  }));
 
   return {
-    user: {
-      id: game.user.id,
-      name: game.user.name,
-      isGM: game.user.isGM
-    },
-    scene: {
-      id: canvas.scene?.id,
-      name: canvas.scene?.name
-    },
+    user: getUserSnapshot(),
+    scene: getSceneSnapshot(),
     canvasReady: canvas.ready,
-    socket: `module.${MODULE_ID}`,
+    query: QUERY_NAMES.TOGGLE_LIGHT,
     switchLayer: {
       exists: Boolean(layer),
       childCount: layer?.children?.length ?? 0
     },
-    lights
+    lights: getLightSnapshots()
+  };
+}
+
+function getUserSnapshot() {
+  return {
+    id: game.user.id,
+    name: game.user.name,
+    isGM: game.user.isGM
+  };
+}
+
+function getSceneSnapshot() {
+  return {
+    id: canvas.scene?.id,
+    name: canvas.scene?.name
+  };
+}
+
+function getLightSnapshots() {
+  return Array.from(canvas?.lighting?.placeables ?? []).map(getLightSnapshot);
+}
+
+function getLightSnapshot(placeable) {
+  const light = placeable.document;
+  const toggleFlag = light.getFlag(MODULE_ID, FLAGS.PLAYER_TOGGLE_ENABLED);
+
+  return {
+    id: light.id,
+    x: light.x,
+    y: light.y,
+    hidden: light.hidden,
+    visible: placeable.visible,
+    renderable: placeable.renderable,
+    toggleAllowed: isTruthyValue(toggleFlag),
+    isOff: light.getFlag(MODULE_ID, FLAGS.IS_OFF) === true,
+    flag: toggleFlag
   };
 }
 
 function findSwitchLayer() {
   return canvas?.stage?.children?.find((child) => child.name === "daavyLightswitchLayer");
-}
-
-function isFlagTruthy(value) {
-  return value === true || value === "true" || value === 1 || value === "1" || value === "on";
 }
