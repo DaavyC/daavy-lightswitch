@@ -14,6 +14,7 @@ const COLORS = {
   white: 0xffffff
 };
 
+// Creates a PIXI.Graphics object representing the background circle of the toggle button.
 export function createButtonBackground(off) {
   const graphics = new PIXI.Graphics();
   const fill = off ? COLORS.offBackground : COLORS.onBackground;
@@ -23,6 +24,7 @@ export function createButtonBackground(off) {
   return graphics;
 }
 
+// Creates a PIXI.Graphics object containing the complete light bulb icon details.
 export function createButtonIcon(off) {
   const icon = new PIXI.Graphics();
   const palette = getPalette(off);
@@ -35,6 +37,7 @@ export function createButtonIcon(off) {
   return icon;
 }
 
+// Returns the color and styling palette configuration depending on the light switch state.
 function getPalette(off) {
   return {
     glass: off ? COLORS.offGlass : COLORS.onGold,
@@ -45,12 +48,14 @@ function getPalette(off) {
   };
 }
 
+// Draws the active bulb glow circles when the switch is on.
 function drawGlow(icon, off) {
   if (off) return;
   drawCircle(icon, { x: 0, y: -3, radius: 11, fill: COLORS.onGold, alpha: 0.16 });
   drawCircle(icon, { x: 0, y: -3, radius: 7, fill: COLORS.onGlow, alpha: 0.2 });
 }
 
+// Draws the glass bulb shape and the glass neck piece.
 function drawBulb(icon, palette) {
   drawEllipse(icon, {
     x: 0,
@@ -71,18 +76,21 @@ function drawBulb(icon, palette) {
   });
 }
 
+// Draws the glowing filament wire and reflections inside the bulb if the light is on.
 function drawFilament(icon, off) {
   if (off) return;
   drawLine(icon, { points: [-3, -4, -1, -1, 1, -4, 3, -1], color: COLORS.filament, width: 1.25, alpha: 0.72 });
   drawCircle(icon, { x: -2.6, y: -8.2, radius: 1.5, fill: COLORS.white, alpha: 0.58 });
 }
 
+// Draws the entire metal base cap assembly of the bulb.
 function drawBase(icon, palette, off) {
   drawBaseTop(icon, palette);
   drawLine(icon, { points: [-3.4, 6.5, 3.4, 6.5], color: off ? COLORS.offStroke : 0xffef9b, width: 0.9, alpha: 0.72 });
   drawBaseBottom(icon, palette);
 }
 
+// Draws the rounded top metallic part of the bulb base.
 function drawBaseTop(icon, palette) {
   drawRoundedRect(icon, {
     x: -4.8,
@@ -97,6 +105,7 @@ function drawBaseTop(icon, palette) {
   });
 }
 
+// Draws the bottom contact point of the bulb base.
 function drawBaseBottom(icon, palette) {
   drawRoundedRect(icon, {
     x: -3.4,
@@ -111,6 +120,7 @@ function drawBaseBottom(icon, palette) {
   });
 }
 
+// Helper that draws a PIXI circle compatibility-safe across PIXI versions.
 function drawCircle(graphics, shape) {
   if (typeof graphics.circle === "function") {
     graphics.circle(shape.x, shape.y, shape.radius).fill({ color: shape.fill, alpha: shape.alpha });
@@ -124,6 +134,7 @@ function drawCircle(graphics, shape) {
   graphics.endFill();
 }
 
+// Helper that draws a PIXI ellipse compatibility-safe across PIXI versions.
 function drawEllipse(graphics, shape) {
   if (typeof graphics.ellipse === "function") {
     graphics
@@ -139,6 +150,7 @@ function drawEllipse(graphics, shape) {
   graphics.endFill();
 }
 
+// Helper that draws a PIXI rounded rectangle compatibility-safe across PIXI versions.
 function drawRoundedRect(graphics, shape) {
   if (typeof graphics.roundRect === "function") {
     graphics
@@ -154,6 +166,7 @@ function drawRoundedRect(graphics, shape) {
   graphics.endFill();
 }
 
+// Helper that draws a PIXI polygon compatibility-safe across PIXI versions.
 function drawPolygon(graphics, shape) {
   if (typeof graphics.poly === "function") {
     graphics
@@ -169,6 +182,7 @@ function drawPolygon(graphics, shape) {
   graphics.endFill();
 }
 
+// Helper that draws a PIXI line path compatibility-safe across PIXI versions.
 function drawLine(graphics, shape) {
   if (typeof graphics.stroke !== "function") {
     graphics.lineStyle(shape.width, shape.color, shape.alpha);
@@ -184,11 +198,13 @@ function drawLine(graphics, shape) {
   }
 }
 
+// Applies PIXI v8 stroke parameters to modern PIXI Graphics objects.
 function strokeShape(graphics, shape) {
   if (shape.stroke === undefined || !shape.strokeWidth) return;
   graphics.stroke({ color: shape.stroke, alpha: shape.strokeAlpha ?? 0.95, width: shape.strokeWidth });
 }
 
+// Applies line style parameters compatibility-safe for older PIXI versions.
 function lineStyle(graphics, shape) {
   if (shape.stroke === undefined || !shape.strokeWidth) return;
   graphics.lineStyle(shape.strokeWidth, shape.stroke, shape.strokeAlpha ?? 0.95);

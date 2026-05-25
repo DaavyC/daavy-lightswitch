@@ -4,6 +4,7 @@ import { buildToggleUpdate, isToggleAllowed } from "./toggle.js";
 
 const QUERY_TIMEOUT_MS = 5000;
 
+// Registers the light toggle query socket handler in Foundry.
 export function registerSocket() {
   CONFIG.queries[QUERY_NAMES.TOGGLE_LIGHT] = handleToggleLightQuery;
   debugLog("query registered", {
@@ -13,6 +14,7 @@ export function registerSocket() {
   });
 }
 
+// Requests to toggle a light, either directly or via an active GM.
 export async function requestLightToggle(light) {
   const ids = getLightRequestIds(light);
 
@@ -25,6 +27,7 @@ export async function requestLightToggle(light) {
   return queryActiveGM(ids);
 }
 
+// Finds an active GM to send the light toggle query.
 async function queryActiveGM(payload) {
   const gm = getActiveGM();
   if (!gm) {
@@ -36,6 +39,7 @@ async function queryActiveGM(payload) {
   return sendToggleQuery(gm, payload);
 }
 
+// Sends the toggle request to the GM via socket and awaits response or timeout.
 async function sendToggleQuery(gm, payload) {
   try {
     const result = await gm.query(QUERY_NAMES.TOGGLE_LIGHT, payload, { timeout: QUERY_TIMEOUT_MS });
@@ -51,6 +55,7 @@ async function sendToggleQuery(gm, payload) {
   }
 }
 
+// Direct update path if player has immediate modification permissions.
 async function applyDirectToggle(light, lightId) {
   const update = buildValidatedToggleUpdate(light, game.user, { allowGM: true });
   debugLog("direct update path", { lightId, update });
@@ -59,6 +64,7 @@ async function applyDirectToggle(light, lightId) {
   return { ok: true, direct: true };
 }
 
+// GM-side socket handler that validates and executes the toggle request.
 export async function handleToggleLightQuery(payload, { user } = {}) {
   logQueryReceived(payload, user);
   if (!game.user.isGM) return { ok: false, reason: "not-gm" };
@@ -75,6 +81,7 @@ export async function handleToggleLightQuery(payload, { user } = {}) {
   return { ok: true };
 }
 
+// Logs incoming socket query info for debugging.
 function logQueryReceived(payload, user) {
   debugLog("toggle light query received", {
     payload,
@@ -84,6 +91,7 @@ function logQueryReceived(payload, user) {
   });
 }
 
+// Aggregates debug details when a toggle query is rejected.
 function getQueryRejectDebug(payload, scene, light, user) {
   return {
     sceneId: payload?.sceneId,
@@ -95,11 +103,13 @@ function getQueryRejectDebug(payload, scene, light, user) {
   };
 }
 
+// Performs the scene-level update to the AmbientLight document using GM permissions.
 async function applyGMUpdate(scene, light, update) {
   debugNotify("GM applying light update", { sceneId: scene.id, lightId: light.id, update });
   await scene.updateEmbeddedDocuments("AmbientLight", [{ _id: light.id, ...update }]);
 }
 
+// Validates the toggle request based on user roles and document toggle permissions.
 export function buildValidatedToggleUpdate(light, user, { allowGM = false } = {}) {
   if (!light || !user) return null;
   if (user.isGM && !allowGM) return null;
@@ -107,14 +117,17 @@ export function buildValidatedToggleUpdate(light, user, { allowGM = false } = {}
   return buildToggleUpdate(light);
 }
 
+// Finds the first active GM user in the session.
 function getActiveGM() {
   return game.users.find((user) => user.active && user.isGM) ?? null;
 }
 
+// Checks if the current user has native Foundry permissions to modify the light.
 function canUpdateLight(light) {
   return light?.canUserModify?.(game.user, "update") === true;
 }
 
+// Formats required IDs from a light document for the request.
 function getLightRequestIds(light) {
   return {
     sceneId: light?.scene?.id ?? canvas.scene?.id,
@@ -122,6 +135,7 @@ function getLightRequestIds(light) {
   };
 }
 
+// Retrieves the scene and light documents from their respective IDs.
 function getSceneLight(sceneId, lightId) {
   const scene = game.scenes.get(sceneId);
   const light = scene?.getEmbeddedDocument?.("AmbientLight", lightId)
