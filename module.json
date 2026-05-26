@@ -1,16 +1,16 @@
 {
   "id": "daavy-lightswitch",
   "title": "Daavy's Lightswitch",
-  "description": "Allows players to turn permitted lights on or off.",
+  "description": "<p>Allows players to turn permitted lights on or off.</p>",
   "version": "1.0.0",
-  "type": "module",
   "license": "LICENSE",
   "authors": [
     {
       "name": "Daavy",
       "discord": "daavy",
       "email": "Daavyc@gmail.com",
-      "url": "https://github.com/DaavyC"
+      "url": "https://github.com/DaavyC",
+      "flags": {}
     }
   ],
   "url": "https://github.com/DaavyC/daavy-lightswitch",
@@ -25,14 +25,17 @@
     "main.js"
   ],
   "styles": [
-    "styles/main.css"
+    {
+      "src": "styles/main.css"
+    }
   ],
   "languages": [
     {
       "lang": "en",
       "name": "English",
-      "path": "lang/en.json"
+      "path": "lang/en.json",
+      "flags": {}
     }
   ],
-  "media": []
+  "flags": {}
 }
