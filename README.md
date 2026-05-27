@@ -4,6 +4,10 @@ A simple module for **Foundry VTT** that lets players turn map lights on and off
 
 ---
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/C1I7209LY1)
+
+---
+
 ## 🗂️ Features
 
 - **🔘 Map Switches** — Adds a clickable light bulb icon right on top of map lights.
