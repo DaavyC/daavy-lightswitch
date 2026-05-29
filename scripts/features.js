@@ -1,11 +1,15 @@
 import {
+  CANVAS_RENDER,
   COLORS,
+  DOM,
   FLAGS,
   FLAG_PATHS,
+  FOUNDRY,
   HIT_SIZE,
   MODULE_ID,
   QUERY_NAMES,
   QUERY_TIMEOUT_MS,
+  SWITCH_ICON,
   SWITCH_LAYER_NAME,
   SWITCH_SIZE
 } from "./config.js";
@@ -108,9 +112,9 @@ async function queryActiveGM(payload) {
 
 async function sendToggleQuery(gm, payload) {
   try {
-    const result = await gm.query(QUERY_NAMES.TOGGLE_LIGHT, payload, { timeout: QUERY_TIMEOUT_MS });
-    debugLog("GM light query result", { gmId: gm.id, result });
-    return result;
+    const queryResult = await gm.query(QUERY_NAMES.TOGGLE_LIGHT, payload, { timeout: QUERY_TIMEOUT_MS });
+    debugLog("GM light query result", { gmId: gm.id, result: queryResult });
+    return queryResult;
   } catch (error) {
     debugNotify("GM light query failed", {
       sceneId: payload.sceneId,
@@ -156,7 +160,7 @@ function logQueryReceived(payload, user) {
 
 async function applyGMUpdate(scene, light, update) {
   debugNotify("GM applying light update", { sceneId: scene.id, lightId: light.id, update });
-  await scene.updateEmbeddedDocuments("AmbientLight", [{ _id: light.id, ...update }]);
+  await scene.updateEmbeddedDocuments(FOUNDRY.AMBIENT_LIGHT_TYPE, [{ _id: light.id, ...update }]);
 }
 
 export function buildValidatedToggleUpdate(light, user, { allowGM = false } = {}) {
@@ -170,7 +174,7 @@ function getActiveGM() {
 }
 
 function canUpdateLight(light) {
-  return light?.canUserModify?.(game.user, "update") === true;
+  return light?.canUserModify?.(game.user, FOUNDRY.UPDATE_PERMISSION) === true;
 }
 
 function getLightRequestIds(light) {
@@ -182,9 +186,9 @@ function getLightRequestIds(light) {
 
 function getSceneLight(sceneId, lightId) {
   const scene = game.scenes.get(sceneId);
-  const light = scene?.getEmbeddedDocument?.("AmbientLight", lightId)
+  const light = scene?.getEmbeddedDocument?.(FOUNDRY.AMBIENT_LIGHT_TYPE, lightId)
     ?? scene?.lights?.get?.(lightId)
-    ?? scene?.collections?.get("AmbientLight")?.get(lightId)
+    ?? scene?.collections?.get(FOUNDRY.AMBIENT_LIGHT_TYPE)?.get(lightId)
     ?? null;
 
   return {
@@ -193,12 +197,12 @@ function getSceneLight(sceneId, lightId) {
   };
 }
 
-export function setDefaultPlayerToggleFlag(document, data) {
-  const currentValue = getFlagUpdateValue(data);
+export function setDefaultPlayerToggleFlag(document, creationData) {
+  const currentValue = getFlagUpdateValue(creationData);
   const value = currentValue === undefined ? getPlayerToggleDefault() : isTruthyValue(currentValue);
 
   document.updateSource?.({ [FLAG_PATHS.PLAYER_TOGGLE_ENABLED]: value });
-  foundry.utils.setProperty(data, FLAG_PATHS.PLAYER_TOGGLE_ENABLED, value);
+  foundry.utils.setProperty(creationData, FLAG_PATHS.PLAYER_TOGGLE_ENABLED, value);
 }
 
 export function normalizePlayerToggleFlag(document, change) {
@@ -240,8 +244,8 @@ export function addPlayerToggleField(app, html) {
 
 function createBooleanInputs(checked) {
   return {
-    hidden: createPlayerToggleInput("hidden", false),
-    checkbox: createPlayerToggleInput("checkbox", true, checked)
+    hidden: createPlayerToggleInput(DOM.INPUT_TYPES.HIDDEN, false),
+    checkbox: createPlayerToggleInput(DOM.INPUT_TYPES.CHECKBOX, true, checked)
   };
 }
 
@@ -250,8 +254,8 @@ function createPlayerToggleInput(type, value, checked = false) {
   input.type = type;
   input.name = FLAG_PATHS.PLAYER_TOGGLE_ENABLED;
   input.value = String(value);
-  input.dataset.dtype = "Boolean";
-  if (type === "checkbox") input.checked = checked;
+  input.dataset.dtype = DOM.BOOLEAN_DTYPE;
+  if (type === DOM.INPUT_TYPES.CHECKBOX) input.checked = checked;
   return input;
 }
 
@@ -271,13 +275,13 @@ function createFoundryFormGroup(input) {
 
 function createFallbackFormGroup(input) {
   const group = document.createElement("div");
-  group.className = "form-group";
+  group.className = DOM.FORM_GROUP_CLASS;
 
   const label = document.createElement("label");
   label.textContent = game.i18n.localize(`${MODULE_ID}.ambientLightConfig.playerToggleEnabled.label`);
 
   const hint = document.createElement("p");
-  hint.className = "hint";
+  hint.className = DOM.HINT_CLASS;
   hint.textContent = game.i18n.localize(`${MODULE_ID}.ambientLightConfig.playerToggleEnabled.hint`);
 
   group.append(label, input, hint);
@@ -285,15 +289,15 @@ function createFallbackFormGroup(input) {
 }
 
 function findFieldTarget(element) {
-  return element.querySelector("form .tab[data-tab='basic']")
-    ?? element.querySelector("form .tab.active")
-    ?? element.querySelector("form .tab")
-    ?? element.querySelector("form")
+  return element.querySelector(DOM.BASIC_TAB_SELECTOR)
+    ?? element.querySelector(DOM.ACTIVE_TAB_SELECTOR)
+    ?? element.querySelector(DOM.TAB_SELECTOR)
+    ?? element.querySelector(DOM.FORM_SELECTOR)
     ?? element;
 }
 
 function insertPlayerToggleGroup(element, group) {
-  const nameRow = element.querySelector('[name="name"]')?.closest(".form-group");
+  const nameRow = element.querySelector(DOM.NAME_INPUT_SELECTOR)?.closest(`.${DOM.FORM_GROUP_CLASS}`);
   if (nameRow) {
     nameRow.after(group);
   } else {
@@ -307,10 +311,10 @@ function getDocumentPlayerToggleValue(document) {
   return isTruthyValue(value);
 }
 
-function getFlagUpdateValue(data) {
-  if (Object.hasOwn(data, FLAG_PATHS.PLAYER_TOGGLE_ENABLED)) return data[FLAG_PATHS.PLAYER_TOGGLE_ENABLED];
-  if (!foundry.utils.hasProperty(data, FLAG_PATHS.PLAYER_TOGGLE_ENABLED)) return undefined;
-  return foundry.utils.getProperty(data, FLAG_PATHS.PLAYER_TOGGLE_ENABLED);
+function getFlagUpdateValue(creationData) {
+  if (Object.hasOwn(creationData, FLAG_PATHS.PLAYER_TOGGLE_ENABLED)) return creationData[FLAG_PATHS.PLAYER_TOGGLE_ENABLED];
+  if (!foundry.utils.hasProperty(creationData, FLAG_PATHS.PLAYER_TOGGLE_ENABLED)) return undefined;
+  return foundry.utils.getProperty(creationData, FLAG_PATHS.PLAYER_TOGGLE_ENABLED);
 }
 
 export function createButtonBackground(off) {
@@ -318,7 +322,15 @@ export function createButtonBackground(off) {
   const fill = off ? COLORS.offBackground : COLORS.onBackground;
   const stroke = off ? COLORS.offStroke : COLORS.onGold;
 
-  drawCircle(graphics, { x: 0, y: 0, radius: SWITCH_SIZE / 2, fill, alpha: 0.88, stroke, strokeWidth: 2 });
+  drawCircle(graphics, {
+    x: 0,
+    y: 0,
+    radius: SWITCH_SIZE / 2,
+    fill,
+    alpha: SWITCH_ICON.backgroundAlpha,
+    stroke,
+    strokeWidth: SWITCH_ICON.backgroundStrokeWidth
+  });
   return graphics;
 }
 
@@ -337,76 +349,62 @@ export function createButtonIcon(off) {
 function getPalette(off) {
   return {
     glass: off ? COLORS.offGlass : COLORS.onGold,
-    glassAlpha: off ? 0.42 : 0.95,
+    glassAlpha: off ? SWITCH_ICON.offGlassAlpha : SWITCH_ICON.onGlassAlpha,
     glassStroke: off ? COLORS.offStroke : COLORS.onStroke,
     base: off ? COLORS.offBase : COLORS.onBase,
-    baseStroke: off ? 0xa0a0a0 : COLORS.onGold
+    baseStroke: off ? SWITCH_ICON.offBaseStroke : COLORS.onGold
   };
 }
 
 function drawGlow(icon, off) {
   if (off) return;
-  drawCircle(icon, { x: 0, y: -3, radius: 11, fill: COLORS.onGold, alpha: 0.16 });
-  drawCircle(icon, { x: 0, y: -3, radius: 7, fill: COLORS.onGlow, alpha: 0.2 });
+  drawCircle(icon, { ...SWITCH_ICON.glow.outer, fill: COLORS.onGold });
+  drawCircle(icon, { ...SWITCH_ICON.glow.inner, fill: COLORS.onGlow });
 }
 
 function drawBulb(icon, palette) {
   drawEllipse(icon, {
-    x: 0,
-    y: -5,
-    width: 7,
-    height: 8,
+    ...SWITCH_ICON.bulb.glass,
     fill: palette.glass,
     alpha: palette.glassAlpha,
-    stroke: palette.glassStroke,
-    strokeWidth: 1.6
+    stroke: palette.glassStroke
   });
   drawPolygon(icon, {
-    points: [-4, 2, 4, 2, 3, 6, -3, 6],
+    ...SWITCH_ICON.bulb.neck,
     fill: palette.glass,
     alpha: palette.glassAlpha,
-    stroke: palette.glassStroke,
-    strokeWidth: 1.2
+    stroke: palette.glassStroke
   });
 }
 
 function drawFilament(icon, off) {
   if (off) return;
-  drawLine(icon, { points: [-3, -4, -1, -1, 1, -4, 3, -1], color: COLORS.filament, width: 1.25, alpha: 0.72 });
-  drawCircle(icon, { x: -2.6, y: -8.2, radius: 1.5, fill: COLORS.white, alpha: 0.58 });
+  drawLine(icon, { ...SWITCH_ICON.filament.line, color: COLORS.filament });
+  drawCircle(icon, { ...SWITCH_ICON.filament.highlight, fill: COLORS.white });
 }
 
 function drawBase(icon, palette, off) {
   drawBaseTop(icon, palette);
-  drawLine(icon, { points: [-3.4, 6.5, 3.4, 6.5], color: off ? COLORS.offStroke : 0xffef9b, width: 0.9, alpha: 0.72 });
+  drawLine(icon, {
+    ...SWITCH_ICON.base.separator,
+    color: off ? COLORS.offStroke : SWITCH_ICON.base.separator.color
+  });
   drawBaseBottom(icon, palette);
 }
 
 function drawBaseTop(icon, palette) {
   drawRoundedRect(icon, {
-    x: -4.8,
-    y: 5,
-    width: 9.6,
-    height: 4.2,
-    radius: 1.2,
+    ...SWITCH_ICON.base.top,
     fill: palette.base,
-    alpha: 0.95,
-    stroke: palette.baseStroke,
-    strokeWidth: 1.1
+    stroke: palette.baseStroke
   });
 }
 
 function drawBaseBottom(icon, palette) {
   drawRoundedRect(icon, {
-    x: -3.4,
-    y: 9,
-    width: 6.8,
-    height: 2.3,
-    radius: 0.8,
+    ...SWITCH_ICON.base.bottom,
     fill: palette.base,
-    alpha: 0.9,
-    stroke: palette.baseStroke,
-    strokeWidth: 0.8
+    stroke: palette.baseStroke
   });
 }
 
@@ -420,7 +418,7 @@ export function scheduleLightSwitchRefresh() {
   pendingRefresh = setTimeout(() => {
     pendingRefresh = null;
     refreshLightSwitches();
-  }, 0);
+  }, CANVAS_RENDER.REFRESH_DELAY_MS);
 }
 
 export function refreshLightSwitches() {
@@ -476,10 +474,10 @@ function ensureSwitchLayer() {
 
   switchLayer = new PIXI.Container();
   switchLayer.name = SWITCH_LAYER_NAME;
-  switchLayer.eventMode = "passive";
+  switchLayer.eventMode = DOM.PASSIVE_EVENT_MODE;
   switchLayer.interactiveChildren = true;
   switchLayer.sortableChildren = true;
-  switchLayer.zIndex = 10_000;
+  switchLayer.zIndex = CANVAS_RENDER.SWITCH_LAYER_Z_INDEX;
 
   const parent = canvas.stage;
   parent.sortableChildren = true;
@@ -487,9 +485,9 @@ function ensureSwitchLayer() {
 }
 
 export function shouldShowSwitch(placeable) {
-  const result = getSwitchVisibilityReason(placeable);
-  debugLog("switch visibility checked", result);
-  return result.visible;
+  const visibility = getSwitchVisibilityReason(placeable);
+  debugLog("switch visibility checked", visibility);
+  return visibility.visible;
 }
 
 export function getSwitchVisibilityReason(placeable) {
@@ -521,8 +519,8 @@ function isInvisibleActiveLight(placeable) {
 }
 
 function getVisibilityOptions(placeable) {
-  if (isLightOff(placeable.document)) return { tolerance: 0 };
-  return { object: placeable, tolerance: 0 };
+  if (isLightOff(placeable.document)) return { tolerance: CANVAS_RENDER.VISIBILITY_TOLERANCE };
+  return { object: placeable, tolerance: CANVAS_RENDER.VISIBILITY_TOLERANCE };
 }
 
 function getLightPoint(light) {
@@ -543,7 +541,7 @@ function createSwitchButton(light) {
   configureSwitchButton(button, light);
   button.addChild(createButtonBackground(off));
   button.addChild(createButtonIcon(off));
-  button.on("pointerdown", (event) => handleSwitchPointerDown(event, light));
+  button.on(DOM.POINTER_DOWN_EVENT, (event) => handleSwitchPointerDown(event, light));
 
   return button;
 }
@@ -551,9 +549,9 @@ function createSwitchButton(light) {
 function configureSwitchButton(button, light) {
   button.x = light.x;
   button.y = light.y;
-  button.eventMode = "static";
+  button.eventMode = DOM.STATIC_EVENT_MODE;
   button.interactive = true;
-  button.cursor = "pointer";
+  button.cursor = DOM.POINTER_CURSOR;
   button.hitArea = new PIXI.Rectangle(-HIT_SIZE / 2, -HIT_SIZE / 2, HIT_SIZE, HIT_SIZE);
   button.scale.set(getInverseCanvasScale());
 }
@@ -578,7 +576,7 @@ function installCanvasClickHandler() {
     handleCanvasPointerDown(event);
   };
 
-  canvasElement.addEventListener("pointerdown", canvasClickHandler, true);
+  canvasElement.addEventListener(DOM.POINTER_DOWN_EVENT, canvasClickHandler, true);
 }
 
 function handleCanvasPointerDown(event) {
@@ -601,8 +599,8 @@ function handleCanvasPointerDown(event) {
 function getCanvasElement() {
   return canvas.app?.canvas
     ?? canvas.app?.view
-    ?? document.querySelector("#board canvas")
-    ?? document.querySelector("canvas");
+    ?? document.querySelector(DOM.BOARD_CANVAS_SELECTOR)
+    ?? document.querySelector(DOM.CANVAS_SELECTOR);
 }
 
 function getLightAtClientPoint(clientX, clientY) {
@@ -657,6 +655,6 @@ function getClientPosition(light) {
 }
 
 function getInverseCanvasScale() {
-  const scale = canvas.stage?.scale?.x || 1;
+  const scale = canvas.stage?.scale?.x || CANVAS_RENDER.DEFAULT_SCALE;
   return 1 / scale;
 }

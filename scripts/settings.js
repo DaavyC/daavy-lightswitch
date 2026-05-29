@@ -1,5 +1,8 @@
 import {
+  DOM,
+  FOUNDRY,
   MODULE_ID,
+  RESET_DIALOG,
   SETTINGS,
   SETTINGS_DEFAULTS,
   SETTINGS_GROUPS,
@@ -13,10 +16,10 @@ export function registerSettings() {
 }
 
 function registerResetMenu() {
-  game.settings.registerMenu(MODULE_ID, "resetSettings", {
+  game.settings.registerMenu(MODULE_ID, RESET_DIALOG.MENU_KEY, {
     name: `${MODULE_ID}.settings.reset.name`,
     hint: `${MODULE_ID}.settings.reset.hint`,
-    icon: "fas fa-layer-group",
+    icon: RESET_DIALOG.MENU_ICON,
     type: ResetSettingsDialog,
     restricted: true
   });
@@ -26,7 +29,7 @@ function registerBooleanSetting({ key, defaultValue }) {
   game.settings.register(MODULE_ID, key, {
     name: `${MODULE_ID}.settings.${key}.name`,
     hint: `${MODULE_ID}.settings.${key}.hint`,
-    scope: "world",
+    scope: FOUNDRY.SETTING_SCOPE,
     config: true,
     type: Boolean,
     default: defaultValue
@@ -65,22 +68,22 @@ function groupSettingRows(container, doc, groupKey, settingKeys) {
 
   for (const row of rows) {
     row.remove();
-    row.classList.add("daavy-lightswitch-settings-row");
+    row.classList.add(DOM.SETTINGS_ROW_CLASS);
     fieldset.appendChild(row);
   }
 }
 
 function isUngroupedSettingRow(row) {
-  return row && !hasClassAncestor(row, "daavy-lightswitch-settings-group");
+  return row && !hasClassAncestor(row, DOM.SETTINGS_GROUP_CLASS);
 }
 
 function createGroupFieldset(doc, groupKey) {
   const fieldset = doc.createElement("fieldset");
-  fieldset.className = "daavy-lightswitch-settings-group";
+  fieldset.className = DOM.SETTINGS_GROUP_CLASS;
 
   const legend = doc.createElement("legend");
   legend.textContent = game.i18n.localize(`${MODULE_ID}.settings.groups.${groupKey}`);
-  legend.className = "daavy-lightswitch-settings-group-title";
+  legend.className = DOM.SETTINGS_GROUP_TITLE_CLASS;
   fieldset.appendChild(legend);
 
   return fieldset;
@@ -133,14 +136,14 @@ function getResetDialogOptions() {
     window: { title: localizeReset("title") },
     content: `<p>${localizeReset("content")}</p>`,
     yes: {
-      action: "yes",
-      icon: "fa-solid fa-check",
-      label: localizeReset("yes")
+      action: RESET_DIALOG.YES_ACTION,
+      icon: RESET_DIALOG.YES_ICON,
+      label: localizeReset(RESET_DIALOG.YES_ACTION)
     },
     no: {
-      action: "no",
-      icon: "fa-solid fa-xmark",
-      label: localizeReset("no")
+      action: RESET_DIALOG.NO_ACTION,
+      icon: RESET_DIALOG.NO_ICON,
+      label: localizeReset(RESET_DIALOG.NO_ACTION)
     }
   };
 }
@@ -151,7 +154,7 @@ function localizeReset(key) {
 
 function findSettingRow(container, key) {
   const settingId = `${MODULE_ID}.${key}`;
-  return container.querySelector(`[data-setting-id="${settingId}"]`)?.closest(".form-group")
-    ?? container.querySelector(`[id$="${settingId}"]`)?.closest(".form-group")
+  return container.querySelector(`[data-setting-id="${settingId}"]`)?.closest(`.${DOM.FORM_GROUP_CLASS}`)
+    ?? container.querySelector(`[id$="${settingId}"]`)?.closest(`.${DOM.FORM_GROUP_CLASS}`)
     ?? null;
 }

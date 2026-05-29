@@ -1,6 +1,8 @@
+import { DRAWING, TRUE_VALUES } from "./config.js";
+
 export function isTruthyValue(value) {
   if (Array.isArray(value)) return value.some(isTruthyValue);
-  return value === true || value === "true" || value === 1 || value === "1" || value === "on";
+  return TRUE_VALUES.includes(value);
 }
 
 export function cloneConfig(config) {
@@ -44,7 +46,7 @@ export function drawEllipse(graphics, shape) {
     graphics
       .ellipse(shape.x, shape.y, shape.width, shape.height)
       .fill({ color: shape.fill, alpha: shape.alpha })
-      .stroke({ color: shape.stroke, alpha: 0.95, width: shape.strokeWidth });
+      .stroke({ color: shape.stroke, alpha: DRAWING.DEFAULT_STROKE_ALPHA, width: shape.strokeWidth });
     return;
   }
 
@@ -58,7 +60,7 @@ export function drawRoundedRect(graphics, shape) {
     graphics
       .roundRect(shape.x, shape.y, shape.width, shape.height, shape.radius)
       .fill({ color: shape.fill, alpha: shape.alpha })
-      .stroke({ color: shape.stroke, alpha: 0.86, width: shape.strokeWidth });
+      .stroke({ color: shape.stroke, alpha: DRAWING.ROUNDED_RECT_STROKE_ALPHA, width: shape.strokeWidth });
     return;
   }
 
@@ -72,7 +74,7 @@ export function drawPolygon(graphics, shape) {
     graphics
       .poly(shape.points)
       .fill({ color: shape.fill, alpha: shape.alpha })
-      .stroke({ color: shape.stroke, alpha: 0.85, width: shape.strokeWidth });
+      .stroke({ color: shape.stroke, alpha: DRAWING.POLYGON_STROKE_ALPHA, width: shape.strokeWidth });
     return;
   }
 
@@ -98,7 +100,7 @@ export function drawLine(graphics, shape) {
 
 function strokeShape(graphics, shape) {
   if (shape.stroke === undefined || !shape.strokeWidth) return;
-  graphics.stroke({ color: shape.stroke, alpha: shape.strokeAlpha ?? 0.95, width: shape.strokeWidth });
+  graphics.stroke({ color: shape.stroke, alpha: shape.strokeAlpha ?? DRAWING.DEFAULT_STROKE_ALPHA, width: shape.strokeWidth });
 }
 
 function drawLegacyShape(graphics, shape, draw) {
@@ -110,5 +112,5 @@ function drawLegacyShape(graphics, shape, draw) {
 
 function lineStyle(graphics, shape) {
   if (shape.stroke === undefined || !shape.strokeWidth) return;
-  graphics.lineStyle(shape.strokeWidth, shape.stroke, shape.strokeAlpha ?? 0.95);
+  graphics.lineStyle(shape.strokeWidth, shape.stroke, shape.strokeAlpha ?? DRAWING.DEFAULT_STROKE_ALPHA);
 }
