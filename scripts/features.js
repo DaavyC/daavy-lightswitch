@@ -232,11 +232,9 @@ export function addPlayerToggleField(app, html) {
   const checked = currentValue ?? getPlayerToggleDefault();
   const inputs = createBooleanInputs(checked);
   const group = createFormGroup(inputs.checkbox);
-  const target = findFieldTarget(element);
 
-  if (!target) return;
   group.prepend(inputs.hidden);
-  target.append(group);
+  insertPlayerToggleGroup(element, group);
   app.setPosition?.();
 }
 
@@ -292,6 +290,15 @@ function findFieldTarget(element) {
     ?? element.querySelector("form .tab")
     ?? element.querySelector("form")
     ?? element;
+}
+
+function insertPlayerToggleGroup(element, group) {
+  const nameRow = element.querySelector('[name="name"]')?.closest(".form-group");
+  if (nameRow) {
+    nameRow.after(group);
+  } else {
+    findFieldTarget(element).append(group);
+  }
 }
 
 function getDocumentPlayerToggleValue(document) {
