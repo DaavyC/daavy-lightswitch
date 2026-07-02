@@ -1,5 +1,4 @@
-import { HOOK_NAMES, MODULE_ID } from "./config.js";
-import { registerDebugApi } from "./debug.js";
+import { MODULE_ID } from "./config.js";
 import { organizeSettingsConfig, registerSettings } from "./settings.js";
 import {
   addPlayerToggleField,
@@ -11,17 +10,16 @@ import {
 } from "./features.js";
 
 export function registerHooks() {
-  Hooks.once(HOOK_NAMES.INIT, onInit);
-  Hooks.once(HOOK_NAMES.READY, onReady);
+  Hooks.once("init", onInit);
+  Hooks.once("ready", onReady);
 }
 
 function onInit() {
   registerSettings();
-  Hooks.on(HOOK_NAMES.RENDER_SETTINGS_CONFIG, organizeSettingsConfig);
+  Hooks.on("renderSettingsConfig", organizeSettingsConfig);
 }
 
 function onReady() {
-  registerDebugApi();
   registerSocket();
   registerAmbientLightConfigHooks();
   registerCanvasIconHooks();
@@ -29,29 +27,19 @@ function onReady() {
 }
 
 export function registerAmbientLightConfigHooks() {
-  registerHookHandlers([
-    [HOOK_NAMES.PRE_CREATE_AMBIENT_LIGHT, setDefaultPlayerToggleFlag],
-    [HOOK_NAMES.PRE_UPDATE_AMBIENT_LIGHT, normalizePlayerToggleFlag],
-    [HOOK_NAMES.RENDER_AMBIENT_LIGHT_CONFIG, addPlayerToggleField]
-  ]);
+  Hooks.on("preCreateAmbientLight", setDefaultPlayerToggleFlag);
+  Hooks.on("preUpdateAmbientLight", normalizePlayerToggleFlag);
+  Hooks.on("renderAmbientLightConfig", addPlayerToggleField);
 }
 
 export function registerCanvasIconHooks() {
-  registerHookHandlers([
-    [HOOK_NAMES.CANVAS_READY, refreshLightSwitches],
-    [HOOK_NAMES.CANVAS_PAN, refreshLightSwitches],
-    [HOOK_NAMES.SIGHT_REFRESH, refreshLightSwitches],
-    [HOOK_NAMES.CREATE_AMBIENT_LIGHT, refreshLightSwitches],
-    [HOOK_NAMES.UPDATE_AMBIENT_LIGHT, refreshLightSwitches],
-    [HOOK_NAMES.DELETE_AMBIENT_LIGHT, refreshLightSwitches],
-    [HOOK_NAMES.CONTROL_TOKEN, refreshLightSwitches],
-    [HOOK_NAMES.UPDATE_TOKEN, refreshLightSwitches],
-    [HOOK_NAMES.RENDER_SCENE_CONTROLS, scheduleLightSwitchRefresh]
-  ]);
-}
-
-function registerHookHandlers(handlers) {
-  for (const [hookName, handler] of handlers) {
-    Hooks.on(hookName, handler);
-  }
+  Hooks.on("canvasReady", refreshLightSwitches);
+  Hooks.on("canvasPan", refreshLightSwitches);
+  Hooks.on("sightRefresh", refreshLightSwitches);
+  Hooks.on("createAmbientLight", refreshLightSwitches);
+  Hooks.on("updateAmbientLight", refreshLightSwitches);
+  Hooks.on("deleteAmbientLight", refreshLightSwitches);
+  Hooks.on("controlToken", refreshLightSwitches);
+  Hooks.on("updateToken", refreshLightSwitches);
+  Hooks.on("renderSceneControls", scheduleLightSwitchRefresh);
 }

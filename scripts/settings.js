@@ -1,35 +1,39 @@
 import {
-  DOM,
-  FOUNDRY,
   MODULE_ID,
-  RESET_DIALOG,
   SETTINGS,
-  SETTINGS_DEFAULTS,
-  SETTINGS_GROUPS,
-  SETTING_DEFINITIONS
+  SETTINGS_DEFAULTS
 } from "./config.js";
-import { getHTMLElement, hasClassAncestor } from "./utils.js";
+import { getHTMLElement } from "./utils.js";
+
+const SETTINGS_GROUPS = {
+  Settings: [SETTINGS.PLAYER_TOGGLE_DEFAULT, SETTINGS.SHOW_FOR_GM],
+  Advanced: [SETTINGS.DEBUG]
+};
 
 export function registerSettings() {
   registerResetMenu();
-  SETTING_DEFINITIONS.forEach(registerBooleanSetting);
+  [
+    SETTINGS.PLAYER_TOGGLE_DEFAULT,
+    SETTINGS.DEBUG,
+    SETTINGS.SHOW_FOR_GM
+  ].forEach((key) => registerBooleanSetting(key, SETTINGS_DEFAULTS[key]));
 }
 
 function registerResetMenu() {
-  game.settings.registerMenu(MODULE_ID, RESET_DIALOG.MENU_KEY, {
+  game.settings.registerMenu(MODULE_ID, "resetSettings", {
     name: `${MODULE_ID}.settings.reset.name`,
     hint: `${MODULE_ID}.settings.reset.hint`,
-    icon: RESET_DIALOG.MENU_ICON,
+    icon: "fas fa-layer-group",
     type: ResetSettingsDialog,
     restricted: true
   });
 }
 
-function registerBooleanSetting({ key, defaultValue }) {
+function registerBooleanSetting(key, defaultValue) {
   game.settings.register(MODULE_ID, key, {
     name: `${MODULE_ID}.settings.${key}.name`,
     hint: `${MODULE_ID}.settings.${key}.hint`,
-    scope: FOUNDRY.SETTING_SCOPE,
+    scope: "world",
     config: true,
     type: Boolean,
     default: defaultValue
@@ -59,7 +63,7 @@ export function organizeSettingsConfig(app, html) {
 function groupSettingRows(container, doc, groupKey, settingKeys) {
   const rows = settingKeys
     .map((key) => findSettingRow(container, key))
-    .filter(isUngroupedSettingRow);
+    .filter((row) => row && !row.closest(".daavy-lightswitch-settings-group"));
 
   if (!rows.length) return;
 
@@ -68,39 +72,31 @@ function groupSettingRows(container, doc, groupKey, settingKeys) {
 
   for (const row of rows) {
     row.remove();
-    row.classList.add(DOM.SETTINGS_ROW_CLASS);
+    row.classList.add("daavy-lightswitch-settings-row");
     fieldset.appendChild(row);
   }
 }
 
-function isUngroupedSettingRow(row) {
-  return row && !hasClassAncestor(row, DOM.SETTINGS_GROUP_CLASS);
-}
-
 function createGroupFieldset(doc, groupKey) {
   const fieldset = doc.createElement("fieldset");
-  fieldset.className = DOM.SETTINGS_GROUP_CLASS;
+  fieldset.className = "daavy-lightswitch-settings-group";
 
   const legend = doc.createElement("legend");
   legend.textContent = game.i18n.localize(`${MODULE_ID}.settings.groups.${groupKey}`);
-  legend.className = DOM.SETTINGS_GROUP_TITLE_CLASS;
+  legend.className = "daavy-lightswitch-settings-group-title";
   fieldset.appendChild(legend);
 
   return fieldset;
-}
-
-async function resetSettingsToDefault(app) {
-  await Promise.all(Object.entries(SETTINGS_DEFAULTS).map(([key, value]) => (
-    game.settings.set(MODULE_ID, key, value)
-  )));
-  app?.render?.(true);
 }
 
 export async function confirmResetSettings(app = game.settings.sheet) {
   const confirmed = await showResetConfirmation();
   if (!confirmed) return;
 
-  await resetSettingsToDefault(app);
+  await Promise.all(Object.entries(SETTINGS_DEFAULTS).map(([key, value]) => (
+    game.settings.set(MODULE_ID, key, value)
+  )));
+  app?.render?.(true);
 }
 
 export class ResetSettingsDialog extends (globalThis.FormApplication ?? class {}) {
@@ -136,14 +132,14 @@ function getResetDialogOptions() {
     window: { title: localizeReset("title") },
     content: `<p>${localizeReset("content")}</p>`,
     yes: {
-      action: RESET_DIALOG.YES_ACTION,
-      icon: RESET_DIALOG.YES_ICON,
-      label: localizeReset(RESET_DIALOG.YES_ACTION)
+      action: "yes",
+      icon: "fa-solid fa-check",
+      label: localizeReset("yes")
     },
     no: {
-      action: RESET_DIALOG.NO_ACTION,
-      icon: RESET_DIALOG.NO_ICON,
-      label: localizeReset(RESET_DIALOG.NO_ACTION)
+      action: "no",
+      icon: "fa-solid fa-xmark",
+      label: localizeReset("no")
     }
   };
 }
@@ -154,7 +150,7 @@ function localizeReset(key) {
 
 function findSettingRow(container, key) {
   const settingId = `${MODULE_ID}.${key}`;
-  return container.querySelector(`[data-setting-id="${settingId}"]`)?.closest(`.${DOM.FORM_GROUP_CLASS}`)
-    ?? container.querySelector(`[id$="${settingId}"]`)?.closest(`.${DOM.FORM_GROUP_CLASS}`)
+  return container.querySelector(`[data-setting-id="${settingId}"]`)?.closest(".form-group")
+    ?? container.querySelector(`[id$="${settingId}"]`)?.closest(".form-group")
     ?? null;
 }
