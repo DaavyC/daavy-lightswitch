@@ -11,22 +11,11 @@ const SETTINGS_GROUPS = {
 };
 
 export function registerSettings() {
-  registerResetMenu();
   [
     SETTINGS.PLAYER_TOGGLE_DEFAULT,
     SETTINGS.DEBUG,
     SETTINGS.SHOW_FOR_GM
   ].forEach((key) => registerBooleanSetting(key, SETTINGS_DEFAULTS[key]));
-}
-
-function registerResetMenu() {
-  game.settings.registerMenu(MODULE_ID, "resetSettings", {
-    name: `${MODULE_ID}.settings.reset.name`,
-    hint: `${MODULE_ID}.settings.reset.hint`,
-    icon: "fas fa-layer-group",
-    type: ResetSettingsDialog,
-    restricted: true
-  });
 }
 
 function registerBooleanSetting(key, defaultValue) {
@@ -87,65 +76,6 @@ function createGroupFieldset(doc, groupKey) {
   fieldset.appendChild(legend);
 
   return fieldset;
-}
-
-export async function confirmResetSettings(app = game.settings.sheet) {
-  const confirmed = await showResetConfirmation();
-  if (!confirmed) return;
-
-  await Promise.all(Object.entries(SETTINGS_DEFAULTS).map(([key, value]) => (
-    game.settings.set(MODULE_ID, key, value)
-  )));
-  app?.render?.(true);
-}
-
-export class ResetSettingsDialog extends (globalThis.FormApplication ?? class {}) {
-  constructor(...args) {
-    super(...args);
-
-    return {
-      render: () => confirmResetSettings(game.settings.sheet)
-    };
-  }
-}
-
-async function showResetConfirmation() {
-  const options = getResetDialogOptions();
-
-  if (globalThis.foundry?.applications?.api?.DialogV2) {
-    return globalThis.foundry.applications.api.DialogV2.confirm(options);
-  }
-
-  return new Promise((resolve) => {
-    globalThis.Dialog.confirm({
-      title: options.window.title,
-      content: options.content,
-      yes: () => resolve(true),
-      no: () => resolve(false),
-      defaultYes: false
-    });
-  });
-}
-
-function getResetDialogOptions() {
-  return {
-    window: { title: localizeReset("title") },
-    content: `<p>${localizeReset("content")}</p>`,
-    yes: {
-      action: "yes",
-      icon: "fa-solid fa-check",
-      label: localizeReset("yes")
-    },
-    no: {
-      action: "no",
-      icon: "fa-solid fa-xmark",
-      label: localizeReset("no")
-    }
-  };
-}
-
-function localizeReset(key) {
-  return game.i18n.localize(`${MODULE_ID}.settings.reset.confirm.${key}`);
 }
 
 function findSettingRow(container, key) {

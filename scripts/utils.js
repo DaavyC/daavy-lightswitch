@@ -10,10 +10,12 @@ export function cloneConfig(config) {
 }
 
 export function getHTMLElement(html) {
-  if (typeof HTMLElement !== "undefined" && html instanceof HTMLElement) return html;
-  if (typeof html?.querySelector === "function") return html;
-  if (Array.isArray(html)) return html[0] ?? null;
-  if (html?.jquery) return html[0] ?? null;
-  if (typeof html?.get === "function") return html.get(0) ?? null;
+  if (isHTMLElement(html)) return html;
+  if (isHTMLElement(html?.[0])) return html[0];
+  if (isHTMLElement(html?.get?.(0))) return html.get(0);
   return null;
+}
+
+function isHTMLElement(value) {
+  return value?.nodeType === 1 && typeof value.querySelector === "function";
 }

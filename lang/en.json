@@ -7,12 +7,6 @@
   "daavy-lightswitch.settings.showForGM.hint": "Show light buttons to GMs.",
   "daavy-lightswitch.settings.groups.Settings": "Settings",
   "daavy-lightswitch.settings.groups.Advanced": "Advanced",
-  "daavy-lightswitch.settings.reset.name": "Reset Settings",
-  "daavy-lightswitch.settings.reset.hint": "Restore default settings.",
-  "daavy-lightswitch.settings.reset.confirm.title": "Reset Module Settings",
-  "daavy-lightswitch.settings.reset.confirm.content": "Are you sure you want to reset all of the module settings to the current system’s defaults? <strong>THIS CANNOT BE UNDONE!</strong>",
-  "daavy-lightswitch.settings.reset.confirm.yes": "Reset Module Settings",
-  "daavy-lightswitch.settings.reset.confirm.no": "Cancel",
   "daavy-lightswitch.ambientLightConfig.playerToggleEnabled.label": "Player light switch",
   "daavy-lightswitch.ambientLightConfig.playerToggleEnabled.hint": "Let players toggle this light."
 }

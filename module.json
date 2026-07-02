@@ -2,7 +2,7 @@
   "id": "daavy-lightswitch",
   "title": "Daavy's Lightswitch",
   "description": "<p>Allows players to turn permitted lights on or off.</p>",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "license": "LICENSE",
   "authors": [
     {
@@ -24,9 +24,7 @@
     "scripts/main.js"
   ],
   "styles": [
-    {
-      "src": "styles/main.css"
-    }
+    "styles/main.css"
   ],
   "languages": [
     {

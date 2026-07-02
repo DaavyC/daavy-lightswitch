@@ -12,7 +12,7 @@ const SWITCH_LAYER_NAME = "daavyLightswitchLayer";
 const SWITCH_SIZE = 28;
 const HIT_SIZE = 42;
 
-export function getSourceConfig(light) {
+function getSourceConfig(light) {
   const config = light?._source?.config
     ?? light?.toObject?.()?.config
     ?? light?.config?.toObject?.()
@@ -21,15 +21,15 @@ export function getSourceConfig(light) {
   return cloneConfig(config);
 }
 
-export function isToggleAllowed(light) {
+function isToggleAllowed(light) {
   return isTruthyValue(light?.getFlag?.(MODULE_ID, FLAGS.PLAYER_TOGGLE_ENABLED));
 }
 
-export function isLightOff(light) {
+function isLightOff(light) {
   return light?.getFlag?.(MODULE_ID, FLAGS.IS_OFF) === true;
 }
 
-export function buildTurnOffUpdate(light) {
+function buildTurnOffUpdate(light) {
   const update = {
     hidden: true,
     [IS_OFF_PATH]: true,
@@ -39,7 +39,7 @@ export function buildTurnOffUpdate(light) {
   return update;
 }
 
-export function buildTurnOnUpdate(light) {
+function buildTurnOnUpdate(light) {
   const restoreConfig = light?.getFlag?.(MODULE_ID, FLAGS.RESTORE_CONFIG);
   const update = {
     hidden: false,
@@ -51,7 +51,7 @@ export function buildTurnOnUpdate(light) {
   return update;
 }
 
-export function buildToggleUpdate(light) {
+function buildToggleUpdate(light) {
   if (!isToggleAllowed(light)) return null;
   return isLightOff(light) ? buildTurnOnUpdate(light) : buildTurnOffUpdate(light);
 }
@@ -61,7 +61,7 @@ export function registerSocket() {
   debugLog("query registered", { query: TOGGLE_QUERY, userId: game.user.id, isGM: game.user.isGM });
 }
 
-export async function requestLightToggle(light) {
+async function requestLightToggle(light) {
   const ids = {
     sceneId: light?.scene?.id ?? canvas.scene?.id,
     lightId: light?.id
@@ -105,7 +105,7 @@ async function applyDirectToggle(light) {
   return { ok: true, direct: true };
 }
 
-export async function handleToggleLightQuery(payload, { user } = {}) {
+async function handleToggleLightQuery(payload, { user } = {}) {
   debugLog("toggle light query received", {
     payload,
     requesterId: user?.id,
@@ -139,7 +139,7 @@ export async function handleToggleLightQuery(payload, { user } = {}) {
   return { ok: true };
 }
 
-export function buildValidatedToggleUpdate(light, user, { allowGM = false } = {}) {
+function buildValidatedToggleUpdate(light, user, { allowGM = false } = {}) {
   if (!light || !user) return null;
   if (user.isGM && !allowGM) return null;
   return buildToggleUpdate(light);
@@ -272,7 +272,7 @@ function ensureSwitchLayer() {
   canvas.stage.addChild(switchLayer);
 }
 
-export function shouldShowSwitch(placeable) {
+function shouldShowSwitch(placeable) {
   const light = placeable?.document;
   if (!light || isLightingControlsActive()) return false;
   if (light.hidden && !isLightOff(light)) return false;
@@ -281,7 +281,7 @@ export function shouldShowSwitch(placeable) {
   return canPlayerSeeLight(placeable);
 }
 
-export function canPlayerSeeLight(placeable) {
+function canPlayerSeeLight(placeable) {
   const light = placeable.document;
   if (!isLightOff(light) && (placeable.visible === false || placeable.renderable === false)) return false;
 
@@ -292,13 +292,14 @@ export function canPlayerSeeLight(placeable) {
   return visibility.testVisibility({ x: light.x, y: light.y }, options) === true;
 }
 
-export function isLightingControlsActive() {
+function isLightingControlsActive() {
   return canvas?.lighting?.active === true || ui?.controls?.control?.name === "lighting";
 }
 
 function createSwitchButton(light) {
   const button = new PIXI.Container();
   const off = isLightOff(light);
+  const graphics = new PIXI.Graphics();
 
   button.x = light.x;
   button.y = light.y;
@@ -307,41 +308,15 @@ function createSwitchButton(light) {
   button.cursor = "pointer";
   button.hitArea = new PIXI.Rectangle(-HIT_SIZE / 2, -HIT_SIZE / 2, HIT_SIZE, HIT_SIZE);
   button.scale.set(1 / (canvas.stage?.scale?.x || 1));
-  button.addChild(createButtonBackground(off));
-  button.addChild(createButtonIcon(off));
+  graphics
+    .lineStyle(2, off ? 0xb8b8b8 : 0xffd76a, 0.95)
+    .beginFill(off ? 0x2c2c2c : 0xffd76a, off ? 0.88 : 0.95)
+    .drawCircle(0, 0, SWITCH_SIZE / 2)
+    .endFill();
+  button.addChild(graphics);
   button.on("pointerdown", (event) => handleSwitchPointerDown(event, light));
 
   return button;
-}
-
-function createButtonBackground(off) {
-  const graphics = new PIXI.Graphics();
-  graphics
-    .lineStyle(2, off ? 0xb8b8b8 : 0xffd76a, 0.95)
-    .beginFill(off ? 0x2c2c2c : 0x1e1e1e, 0.88)
-    .drawCircle(0, 0, SWITCH_SIZE / 2)
-    .endFill();
-  return graphics;
-}
-
-function createButtonIcon(off) {
-  const icon = new PIXI.Graphics();
-  const glass = off ? 0x777777 : 0xffd76a;
-  const stroke = off ? 0xb8b8b8 : 0xfff0a3;
-
-  icon
-    .lineStyle(1.5, stroke, 0.95)
-    .beginFill(glass, off ? 0.42 : 0.95)
-    .drawCircle(0, -4, 6)
-    .endFill();
-  icon
-    .lineStyle(1, off ? 0xa0a0a0 : 0xffd76a, 0.85)
-    .beginFill(off ? 0x555555 : 0x8d7840, 0.95)
-    .drawPolygon([-4, 2, 4, 2, 3, 8, -3, 8])
-    .endFill();
-  if (!off) icon.lineStyle(1.25, 0x7a5a00, 0.72).moveTo(-3, -4).lineTo(-1, -1).lineTo(1, -4).lineTo(3, -1);
-
-  return icon;
 }
 
 function handleSwitchPointerDown(event, light) {
@@ -377,12 +352,14 @@ function installGMCanvasClickHandler() {
 function getLightAtClientPoint(clientX, clientY) {
   let closestLight = null;
   let closestDistance = Infinity;
+  const canvasElement = canvas.app?.canvas ?? canvas.app?.view;
+  const rect = canvasElement?.getBoundingClientRect?.() ?? { left: 0, top: 0 };
 
   for (const placeable of canvas.lighting?.placeables ?? []) {
     if (!shouldShowSwitch(placeable)) continue;
 
-    const point = getClientPosition(placeable.document);
-    const distance = Math.hypot(clientX - point.x, clientY - point.y);
+    const point = canvas.stage.worldTransform.apply({ x: placeable.document.x, y: placeable.document.y });
+    const distance = Math.hypot(clientX - rect.left - point.x, clientY - rect.top - point.y);
     if (distance > HIT_SIZE / 2 || distance >= closestDistance) continue;
 
     closestLight = placeable.document;
@@ -390,11 +367,4 @@ function getLightAtClientPoint(clientX, clientY) {
   }
 
   return closestLight;
-}
-
-function getClientPosition(light) {
-  const canvasElement = canvas.app?.canvas ?? canvas.app?.view;
-  const rect = canvasElement?.getBoundingClientRect?.() ?? { left: 0, top: 0 };
-  const point = canvas.stage.worldTransform.apply({ x: light.x, y: light.y });
-  return { x: rect.left + point.x, y: rect.top + point.y };
 }

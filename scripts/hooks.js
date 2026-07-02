@@ -10,29 +10,20 @@ import {
 } from "./features.js";
 
 export function registerHooks() {
+  Hooks.on("renderSettingsConfig", organizeSettingsConfig);
   Hooks.once("init", onInit);
   Hooks.once("ready", onReady);
 }
 
 function onInit() {
   registerSettings();
-  Hooks.on("renderSettingsConfig", organizeSettingsConfig);
 }
 
 function onReady() {
   registerSocket();
-  registerAmbientLightConfigHooks();
-  registerCanvasIconHooks();
-  console.info(`${MODULE_ID} | Ready`);
-}
-
-export function registerAmbientLightConfigHooks() {
   Hooks.on("preCreateAmbientLight", setDefaultPlayerToggleFlag);
   Hooks.on("preUpdateAmbientLight", normalizePlayerToggleFlag);
   Hooks.on("renderAmbientLightConfig", addPlayerToggleField);
-}
-
-export function registerCanvasIconHooks() {
   Hooks.on("canvasReady", refreshLightSwitches);
   Hooks.on("canvasPan", refreshLightSwitches);
   Hooks.on("sightRefresh", refreshLightSwitches);
@@ -42,4 +33,5 @@ export function registerCanvasIconHooks() {
   Hooks.on("controlToken", refreshLightSwitches);
   Hooks.on("updateToken", refreshLightSwitches);
   Hooks.on("renderSceneControls", scheduleLightSwitchRefresh);
+  console.info(`${MODULE_ID} | Ready`);
 }
