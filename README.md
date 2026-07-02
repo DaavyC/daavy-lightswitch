@@ -10,7 +10,7 @@ A simple module for **Foundry VTT** that lets players turn map lights on and off
 
 ## 🗂️ Features
 
-- **🔘 Map Switches** — Adds a clickable light bulb icon right on top of map lights.
+- **🔘 Map Switches** — Adds a clickable icon right on top of map lights.
 - **🔌 Player Controls** — Allows players to toggle lights even if they are not the Game Master (GM).
 - **👁️ Smart Visibility** — Only shows light switches that players can see or have permission to use.
 - **⚡ Instant Toggle** — Turns lights on or off instantly when clicked.
