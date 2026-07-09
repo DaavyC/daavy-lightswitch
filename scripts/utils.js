@@ -10,12 +10,6 @@ export function cloneConfig(config) {
 }
 
 export function getHTMLElement(html) {
-  if (isHTMLElement(html)) return html;
-  if (isHTMLElement(html?.[0])) return html[0];
-  if (isHTMLElement(html?.get?.(0))) return html.get(0);
-  return null;
-}
-
-function isHTMLElement(value) {
-  return value?.nodeType === 1 && typeof value.querySelector === "function";
+  const element = html instanceof HTMLElement ? html : html?.[0];
+  return element instanceof HTMLElement ? element : null;
 }

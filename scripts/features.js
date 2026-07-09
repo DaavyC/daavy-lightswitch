@@ -13,12 +13,7 @@ const SWITCH_SIZE = 28;
 const HIT_SIZE = 42;
 
 function getSourceConfig(light) {
-  const config = light?._source?.config
-    ?? light?.toObject?.()?.config
-    ?? light?.config?.toObject?.()
-    ?? light?.config;
-
-  return cloneConfig(config);
+  return cloneConfig(light?._source?.config);
 }
 
 function isToggleAllowed(light) {
@@ -116,10 +111,7 @@ async function handleToggleLightQuery(payload, { user } = {}) {
   if (!game.user.isGM) return { ok: false, reason: "not-gm" };
 
   const scene = game.scenes.get(payload?.sceneId);
-  const light = scene?.getEmbeddedDocument?.(AMBIENT_LIGHT_TYPE, payload?.lightId)
-    ?? scene?.lights?.get?.(payload?.lightId)
-    ?? scene?.collections?.get(AMBIENT_LIGHT_TYPE)?.get(payload?.lightId)
-    ?? null;
+  const light = scene?.getEmbeddedDocument(AMBIENT_LIGHT_TYPE, payload?.lightId);
   const update = buildValidatedToggleUpdate(light, user);
 
   if (!scene || !light || !update) {

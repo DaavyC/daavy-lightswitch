@@ -7,17 +7,13 @@ export function isDebugEnabled() {
 
 export function debugLog(message, data = {}) {
   if (!isDebugEnabled()) return;
-  writeDebugLog(message, data);
+  console.warn(`${MODULE_ID} | DEBUG | ${message}`, data);
 }
 
 export function debugNotify(message, data = {}) {
   if (!isDebugEnabled()) return;
-  writeDebugLog(message, data);
-  ui.notifications?.info(`${MODULE_ID} DEBUG | ${message}`, { permanent: false });
-}
-
-function writeDebugLog(message, data) {
   console.warn(`${MODULE_ID} | DEBUG | ${message}`, data);
+  ui.notifications?.info(`${MODULE_ID} DEBUG | ${message}`, { permanent: false });
 }
 
 export function reportToggleError(message, error) {
