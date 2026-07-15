@@ -1,19 +1,84 @@
 .daavy-lightswitch-settings-group {
   border: 1px solid var(--color-border-light-primary, #a1a1a1);
   border-radius: 5px;
-  margin: 15px 0;
-  padding: 10px;
+  margin: 2px 0;
+  padding: 0;
   display: block;
 }
 
+.daavy-lightswitch-settings-group[hidden] {
+  display: none;
+}
+
 .daavy-lightswitch-settings-group-title {
-  padding: 0 5px;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 4px 4px 0 0;
+  border-bottom: 1px solid var(--color-border-light-primary, #a1a1a1);
+  background: var(--color-bg-option, rgba(127, 127, 127, 0.12));
   font-weight: bold;
   font-size: var(--font-size-14, 14px);
-  color: var(--color-text-primary, #f0f0e0);
+  color: var(--color-text-primary, inherit);
 }
 
 .daavy-lightswitch-settings-row {
-  margin: 5px 0;
+  margin: 0;
+  padding: 10px;
   border: none;
+}
+
+.daavy-lightswitch-settings-row + .daavy-lightswitch-settings-row {
+  border-top: 1px solid var(--color-border-light-tertiary, rgba(127, 127, 127, 0.2));
+}
+
+.daavy-lightswitch-settings-actions {
+  display: flex;
+  gap: 6px;
+  margin: 6px 0 2px;
+}
+
+.daavy-lightswitch-settings-actions button {
+  flex: 1;
+}
+
+button.daavy-lightswitch-donate-action {
+  color: #ffffff;
+  background: #ff5a16;
+  border-color: #ff8a5c;
+}
+
+button.daavy-lightswitch-donate-action:hover {
+  background: #e84e0c;
+}
+
+button.daavy-lightswitch-discord-action {
+  color: #ffffff;
+  background: #5662f6;
+  border-color: #7e87ff;
+}
+
+button.daavy-lightswitch-discord-action:hover {
+  background: #4652dc;
+}
+
+button.daavy-lightswitch-feedback-action {
+  color: #ffffff;
+  background: #238b82;
+  border-color: #45bdb1;
+}
+
+button.daavy-lightswitch-feedback-action:hover {
+  background: #2ca69b;
+}
+
+.daavy-lightswitch-settings-actions button:focus,
+.daavy-lightswitch-settings-actions button:active {
+  outline: none;
+  box-shadow: none;
+}
+
+.daavy-lightswitch-settings-actions button:focus-visible {
+  outline: 2px solid #4a90e2;
+  outline-offset: 2px;
+  box-shadow: none;
 }

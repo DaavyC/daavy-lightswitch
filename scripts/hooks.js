@@ -1,4 +1,5 @@
 import { MODULE_ID } from "./config.js";
+import { injectFeedbackButton } from "./feedback.js";
 import { organizeSettingsConfig, registerSettings } from "./settings.js";
 import {
   addPlayerToggleField,
@@ -10,13 +11,16 @@ import {
 } from "./features.js";
 
 export function registerHooks() {
-  Hooks.on("renderSettingsConfig", organizeSettingsConfig);
+  Hooks.on("renderSettingsConfig", (app, html) => {
+    organizeSettingsConfig(app, html);
+    injectFeedbackButton(html);
+  });
   Hooks.once("init", onInit);
   Hooks.once("ready", onReady);
 }
 
 function onInit() {
-  registerSettings();
+  registerSettings(refreshLightSwitches);
 }
 
 function onReady() {

@@ -1,7 +1,12 @@
 import { FLAGS, MODULE_ID, TOGGLE_QUERY } from "./config.js";
-import { cloneConfig, getHTMLElement, isTruthyValue } from "./utils.js";
-import { debugLog, debugNotify, reportToggleError } from "./debug.js";
-import { getPlayerToggleDefault, shouldShowForGM } from "./settings.js";
+import { cloneConfig, getHTMLElement, isPointWithinGridDistance, isTruthyValue } from "./utils.js";
+import {
+  doesInteractionDistanceAffectGM,
+  getInteractionDistance,
+  getPlayerToggleDefault,
+  isInteractionDistanceLimited,
+  shouldShowForGM
+} from "./settings.js";
 
 const AMBIENT_LIGHT_TYPE = "AmbientLight";
 const PLAYER_TOGGLE_PATH = `flags.${MODULE_ID}.${FLAGS.PLAYER_TOGGLE_ENABLED}`;
@@ -25,13 +30,11 @@ function isLightOff(light) {
 }
 
 function buildTurnOffUpdate(light) {
-  const update = {
+  return {
     hidden: true,
     [IS_OFF_PATH]: true,
     [RESTORE_CONFIG_PATH]: getSourceConfig(light)
   };
-  debugLog("build turn off update", { lightId: light?.id, update });
-  return update;
 }
 
 function buildTurnOnUpdate(light) {
@@ -53,88 +56,89 @@ function buildToggleUpdate(light) {
 
 export function registerSocket() {
   CONFIG.queries[TOGGLE_QUERY] = handleToggleLightQuery;
-  debugLog("query registered", { query: TOGGLE_QUERY, userId: game.user.id, isGM: game.user.isGM });
 }
 
 async function requestLightToggle(light) {
   const ids = {
     sceneId: light?.scene?.id ?? canvas.scene?.id,
-    lightId: light?.id
+    lightId: light?.id,
+    tokenIds: getControlledTokenIds()
   };
 
-  if (!ids.sceneId || !ids.lightId) {
-    debugNotify("light request missing ids", ids);
-    return { ok: false, reason: "missing-ids" };
-  }
+  if (!ids.sceneId || !ids.lightId) return { ok: false, reason: "missing-ids" };
 
-  if (light?.canUserModify?.(game.user, "update") === true) return applyDirectToggle(light);
+  if (light?.canUserModify?.(game.user, "update") === true) return applyDirectToggle(light, ids.tokenIds);
   return queryActiveGM(ids);
 }
 
 async function queryActiveGM(payload) {
   const gm = game.users.find((user) => user.active && user.isGM);
-  if (!gm) {
-    debugNotify("no active GM for light query", payload);
-    return { ok: false, reason: "no-active-gm" };
-  }
+  if (!gm) return { ok: false, reason: "no-active-gm" };
 
   try {
-    const result = await gm.query(TOGGLE_QUERY, payload, { timeout: 5000 });
-    debugLog("GM light query result", { gmId: gm.id, result });
-    return result;
-  } catch (error) {
-    debugNotify("GM light query failed", {
-      sceneId: payload.sceneId,
-      lightId: payload.lightId,
-      message: error.message
-    });
+    return await gm.query(TOGGLE_QUERY, payload, { timeout: 5000 });
+  } catch {
     return { ok: false, reason: "query-failed" };
   }
 }
 
-async function applyDirectToggle(light) {
-  const update = buildValidatedToggleUpdate(light, game.user, { allowGM: true });
-  debugLog("direct update path", { lightId: light.id, update });
+async function applyDirectToggle(light, tokenIds) {
+  const update = buildValidatedToggleUpdate(light, game.user, { allowGM: true, tokenIds });
   if (!update) return { ok: false, reason: "rejected" };
   await light.update(update);
   return { ok: true, direct: true };
 }
 
 async function handleToggleLightQuery(payload, { user } = {}) {
-  debugLog("toggle light query received", {
-    payload,
-    requesterId: user?.id,
-    receiverId: game.user.id,
-    isGM: game.user.isGM
-  });
-
   if (!game.user.isGM) return { ok: false, reason: "not-gm" };
 
   const scene = game.scenes.get(payload?.sceneId);
   const light = scene?.getEmbeddedDocument(AMBIENT_LIGHT_TYPE, payload?.lightId);
-  const update = buildValidatedToggleUpdate(light, user);
+  const update = buildValidatedToggleUpdate(light, user, { tokenIds: payload?.tokenIds });
 
-  if (!scene || !light || !update) {
-    debugNotify("toggle light query rejected", {
-      sceneId: payload?.sceneId,
-      lightId: payload?.lightId,
-      hasScene: Boolean(scene),
-      hasLight: Boolean(light),
-      hasUser: Boolean(user),
-      userIsGM: user?.isGM
-    });
-    return { ok: false, reason: "rejected" };
-  }
+  if (!scene || !light || !update) return { ok: false, reason: "rejected" };
 
-  debugNotify("GM applying light update", { sceneId: scene.id, lightId: light.id, update });
   await scene.updateEmbeddedDocuments(AMBIENT_LIGHT_TYPE, [{ _id: light.id, ...update }]);
   return { ok: true };
 }
 
-function buildValidatedToggleUpdate(light, user, { allowGM = false } = {}) {
+function buildValidatedToggleUpdate(light, user, { allowGM = false, tokenIds = [] } = {}) {
   if (!light || !user) return null;
   if (user.isGM && !allowGM) return null;
+  if (!isInteractionInRange(light, user, tokenIds)) return null;
   return buildToggleUpdate(light);
+}
+
+function isInteractionInRange(light, user, tokenIds) {
+  if (!isInteractionDistanceLimited()) return true;
+  if (user.isGM && !doesInteractionDistanceAffectGM()) return true;
+
+  const scene = light.parent;
+  const gridSize = Number(scene?.grid?.size);
+  const controlledIds = new Set(Array.isArray(tokenIds) ? tokenIds : []);
+  if (!scene || !gridSize) return false;
+  if (!controlledIds.size) return user.isGM;
+
+  return [...scene.tokens].some((token) => {
+    if (!controlledIds.has(token.id)) return false;
+    if (!token.testUserPermission(user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)) return false;
+
+    return isPointWithinGridDistance(
+      { x: light.x, y: light.y },
+      {
+        x: token.x,
+        y: token.y,
+        width: token.width * gridSize,
+        height: token.height * gridSize
+      },
+      gridSize,
+      getInteractionDistance()
+    );
+  });
+}
+
+function getControlledTokenIds() {
+  return (canvas.tokens?.controlled ?? []).map((token) => token.document.id);
 }
 
 export function setDefaultPlayerToggleFlag(document, creationData) {
@@ -219,30 +223,17 @@ export function scheduleLightSwitchRefresh() {
 }
 
 export function refreshLightSwitches() {
-  if (!globalThis.canvas?.ready || !globalThis.PIXI) {
-    debugLog("refresh skipped", { canvasReady: globalThis.canvas?.ready, hasPixi: Boolean(globalThis.PIXI) });
-    return;
-  }
+  if (!globalThis.canvas?.ready || !globalThis.PIXI) return;
 
   const layer = prepareSwitchLayer();
   installGMCanvasClickHandler();
-  if (isLightingControlsActive()) {
-    debugLog("refresh skipped for lighting controls");
-    return;
-  }
-  if (game.user.isGM && !shouldShowForGM()) {
-    debugLog("refresh skipped for GM");
-    return;
-  }
+  if (isLightingControlsActive()) return;
+  if (game.user.isGM && !shouldShowForGM()) return;
 
-  let rendered = 0;
   for (const placeable of canvas.lighting?.placeables ?? []) {
     if (!shouldShowSwitch(placeable)) continue;
     layer.addChild(createSwitchButton(placeable.document));
-    rendered += 1;
   }
-
-  debugLog("switches refreshed", { placeables: canvas.lighting?.placeables?.length ?? 0, rendered });
 }
 
 function prepareSwitchLayer() {
@@ -269,6 +260,7 @@ function shouldShowSwitch(placeable) {
   if (!light || isLightingControlsActive()) return false;
   if (light.hidden && !isLightOff(light)) return false;
   if (!isToggleAllowed(light)) return false;
+  if (!isInteractionInRange(light, game.user, getControlledTokenIds())) return false;
   if (game.user.isGM) return shouldShowForGM();
   return canPlayerSeeLight(placeable);
 }
@@ -314,7 +306,6 @@ function createSwitchButton(light) {
 function handleSwitchPointerDown(event, light) {
   event.preventDefault?.();
   event.stopPropagation();
-  debugNotify("PIXI button clicked", { lightId: light.id });
   requestLightToggle(light).catch((error) => {
     reportToggleError("Failed to toggle light from PIXI button", error);
   });
@@ -332,13 +323,16 @@ function installGMCanvasClickHandler() {
 
     event.preventDefault();
     event.stopImmediatePropagation();
-    debugNotify("GM canvas click matched light", { lightId: light.id });
     requestLightToggle(light).catch((error) => {
       reportToggleError("Failed to toggle light from GM canvas click", error);
     });
   };
 
   canvasElement.addEventListener("pointerdown", gmCanvasClickHandler, true);
+}
+
+function reportToggleError(message, error) {
+  console.error(`${MODULE_ID} | ${message}`, error);
 }
 
 function getLightAtClientPoint(clientX, clientY) {

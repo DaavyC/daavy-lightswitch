@@ -1,0 +1,86 @@
+button.daavy-lightswitch-feedback-send {
+  color: #f4fff5;
+  background: #236c35;
+  border-color: #45a85b;
+}
+
+.daavy-lightswitch-feedback-send:hover {
+  background: #2f8846;
+}
+
+.daavy-lightswitch-feedback-cancel {
+  color: #fff6f6;
+  background: #7f2424;
+  border-color: #c64b4b;
+}
+
+.daavy-lightswitch-feedback-cancel:hover {
+  background: #9b3030;
+}
+
+button.daavy-lightswitch-feedback-send:focus,
+button.daavy-lightswitch-feedback-send:active,
+button.daavy-lightswitch-feedback-cancel:focus,
+button.daavy-lightswitch-feedback-cancel:active {
+  outline: none;
+  box-shadow: none;
+}
+
+button.daavy-lightswitch-feedback-send:focus-visible,
+button.daavy-lightswitch-feedback-cancel:focus-visible {
+  outline: 2px solid #4a90e2;
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.daavy-lightswitch-feedback-categories {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.daavy-lightswitch-feedback-category {
+  position: relative;
+  margin: 0;
+}
+
+.daavy-lightswitch-feedback-category input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.daavy-lightswitch-feedback-category span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  color: #f3f6fa;
+  background: #3f5f78;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #6f8ba0;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0.65;
+}
+
+.daavy-lightswitch-feedback-category:hover span {
+  background: #4b6f8a;
+}
+
+.daavy-lightswitch-feedback-category:hover span,
+.daavy-lightswitch-feedback-category input:checked + span {
+  opacity: 1;
+}
+
+.daavy-lightswitch-feedback-category input:checked + span {
+  color: #ffffff;
+  background: #5f86a3;
+  border-color: transparent;
+}
+
+.daavy-lightswitch-feedback-category input:focus-visible + span {
+  outline: 2px solid var(--color-text-primary, #ffffff);
+  outline-offset: 2px;
+}

@@ -1,0 +1,127 @@
+import { MODULE_ID } from "./config.js";
+import { getDocument, getHTMLElement } from "./utils.js";
+
+const FEEDBACK_ENDPOINT = "https://feedback.daavyc.workers.dev";
+const FEEDBACK_TEMPLATE = `modules/${MODULE_ID}/templates/feedback.hbs`;
+const DONATE_URL = "https://ko-fi.com/daavy";
+const DISCORD_URL = "https://discord.gg/ZmFZxdGrta";
+const MAX_MESSAGE_LENGTH = 3000;
+const I18N_PREFIX = `${MODULE_ID}.Feedback`;
+const CATEGORIES = ["Bug", "Suggestion"];
+const FEEDBACK_ACTIONS_CLASS = "daavy-lightswitch-settings-actions";
+
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+
+export class FeedbackForm extends HandlebarsApplicationMixin(ApplicationV2) {
+  static DEFAULT_OPTIONS = {
+    id: "daavy-lightswitch-feedback",
+    tag: "form",
+    window: {
+      title: `${I18N_PREFIX}.MenuLabel`,
+      icon: "fa-solid fa-comment-dots",
+      contentClasses: ["standard-form"]
+    },
+    position: {
+      width: 500
+    },
+    form: {
+      closeOnSubmit: false,
+      handler: FeedbackForm.#onSubmit
+    }
+  };
+
+  static PARTS = {
+    form: {
+      template: FEEDBACK_TEMPLATE,
+      root: true
+    }
+  };
+
+  #submitting = false;
+
+  static async #onSubmit(_event, form, formData) {
+    if (this.#submitting) return;
+
+    const category = String(formData.object.category ?? "").trim();
+    const message = String(formData.object.message ?? "").trim();
+    if (!CATEGORIES.includes(category) || !message || message.length > MAX_MESSAGE_LENGTH) {
+      ui.notifications.warn(game.i18n.localize(`${I18N_PREFIX}.Invalid`));
+      return;
+    }
+
+    if (!game.user?.isGM) return;
+
+    const submitButton = form.querySelector('button[type="submit"]');
+    this.#submitting = true;
+    if (submitButton) submitButton.disabled = true;
+
+    try {
+      const response = await fetch(FEEDBACK_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(this.#buildPayload(category, message))
+      });
+
+      if (!response.ok) throw new Error(`Feedback request failed with status ${response.status}.`);
+
+      ui.notifications.info(game.i18n.localize(`${I18N_PREFIX}.Success`));
+      await this.close();
+    } catch (error) {
+      console.error(`${MODULE_ID} | Unable to send feedback.`, error);
+      ui.notifications.error(game.i18n.localize(`${I18N_PREFIX}.Error`));
+    } finally {
+      this.#submitting = false;
+      if (submitButton) submitButton.disabled = false;
+    }
+  }
+
+  #buildPayload(category, message) {
+    const module = game.modules.get(MODULE_ID);
+
+    return {
+      message,
+      category,
+      moduleName: module?.title ?? MODULE_ID,
+      moduleVersion: module?.version ?? "",
+      foundryVersion: game.version ?? "",
+      systemId: game.system?.id ?? "",
+      systemVersion: game.system?.version ?? ""
+    };
+  }
+}
+
+export function injectFeedbackButton(renderedHtml) {
+  const container = getHTMLElement(renderedHtml);
+  if (!container || !game.user?.isGM || container.querySelector(`.${FEEDBACK_ACTIONS_CLASS}`)) return;
+
+  const firstGroup = container.querySelector(".daavy-lightswitch-settings-group");
+  if (!firstGroup) return;
+
+  const documentRef = getDocument(container);
+  const actions = documentRef.createElement("div");
+  actions.className = FEEDBACK_ACTIONS_CLASS;
+
+  const donateButton = documentRef.createElement("button");
+  donateButton.type = "button";
+  donateButton.className = "daavy-lightswitch-donate-action";
+  donateButton.innerHTML = `<i class="fa-solid fa-heart"></i> ${game.i18n.localize(`${MODULE_ID}.Donate.Label`)}`;
+  donateButton.addEventListener("click", () => documentRef.defaultView.open(DONATE_URL, "_blank", "noopener,noreferrer"));
+
+  const discordButton = documentRef.createElement("button");
+  discordButton.type = "button";
+  discordButton.className = "daavy-lightswitch-discord-action";
+  discordButton.innerHTML = `<i class="fa-brands fa-discord"></i> ${game.i18n.localize(`${MODULE_ID}.Discord.Label`)}`;
+  discordButton.addEventListener("click", () => documentRef.defaultView.open(DISCORD_URL, "_blank", "noopener,noreferrer"));
+
+  const feedbackButton = documentRef.createElement("button");
+  feedbackButton.type = "button";
+  feedbackButton.className = "daavy-lightswitch-feedback-action";
+  feedbackButton.title = game.i18n.localize(`${I18N_PREFIX}.MenuHint`);
+  feedbackButton.innerHTML = `<i class="fa-solid fa-comment-dots"></i> ${game.i18n.localize(`${I18N_PREFIX}.MenuLabel`)}`;
+  feedbackButton.addEventListener("click", () => new FeedbackForm().render({ force: true }));
+
+  actions.append(donateButton, discordButton, feedbackButton);
+  firstGroup.before(actions);
+}

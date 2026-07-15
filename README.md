@@ -19,10 +19,11 @@ A simple module for **Foundry VTT** that lets players turn map lights on and off
 
 ## ⚙️ Settings
 
-- **Default Player Toggle** — Choose if newly created lights can be toggled by players by default.
-- **Show for GM** — Choose if the Game Master (GM) sees the switch buttons on the map.
-- **Debug Mode** — Turns on system logs and notifications to help with troubleshooting.
-- **Reset Settings** — Resets all module settings back to default.
+- **Allow Players by Default** — Allow players to toggle newly created lights.
+- **Show Switches to GMs** — Show light switch icons to GMs. Enabled by default.
+- **Limit Interaction Range** — Show range options and require a controlled token near a light.
+- **Maximum Range** — Set the interaction range in grid squares. Defaults to 5.
+- **Affect GMs?** — Apply the range limit when a GM controls a token.
 
 ---
 

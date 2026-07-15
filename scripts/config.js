@@ -3,7 +3,9 @@ export const MODULE_ID = "daavy-lightswitch";
 export const SETTINGS = {
   PLAYER_TOGGLE_DEFAULT: "playerToggleDefault",
   SHOW_FOR_GM: "showForGM",
-  DEBUG: "debug"
+  LIMIT_INTERACTION_DISTANCE: "limitInteractionDistance",
+  INTERACTION_DISTANCE: "interactionDistance",
+  DISTANCE_AFFECTS_GM: "distanceAffectsGM"
 };
 
 export const FLAGS = {
@@ -16,6 +18,8 @@ export const TOGGLE_QUERY = `${MODULE_ID}.toggleLight`;
 
 export const SETTINGS_DEFAULTS = {
   [SETTINGS.PLAYER_TOGGLE_DEFAULT]: true,
-  [SETTINGS.SHOW_FOR_GM]: false,
-  [SETTINGS.DEBUG]: false
+  [SETTINGS.SHOW_FOR_GM]: true,
+  [SETTINGS.LIMIT_INTERACTION_DISTANCE]: false,
+  [SETTINGS.INTERACTION_DISTANCE]: 5,
+  [SETTINGS.DISTANCE_AFFECTS_GM]: false
 };

@@ -1,3 +1,8 @@
+##### 1.1.0
+- Added a setting to limit how far away players can interact with lights
+- Improved the Settings interface
+- Removed debug mode
+
 ##### 1.0.2
 - Simplified the lights icon
 - Removed the option to reset the settings
