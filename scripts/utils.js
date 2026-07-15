@@ -5,10 +5,6 @@ export function isTruthyValue(value) {
   return TRUE_VALUES.includes(value);
 }
 
-export function cloneConfig(config) {
-  return structuredClone(config ?? {});
-}
-
 export function isPointWithinGridDistance(point, rectangle, gridSize, maxDistance) {
   if (gridSize <= 0 || maxDistance < 0) return false;
 
@@ -17,19 +13,7 @@ export function isPointWithinGridDistance(point, rectangle, gridSize, maxDistanc
   return Math.hypot(dx, dy) <= maxDistance * gridSize;
 }
 
-function isElement(element) {
-  return !!element
-    && typeof element === "object"
-    && element.nodeType === 1
-    && typeof element.querySelector === "function";
-}
-
 export function getHTMLElement(html) {
-  if (isElement(html)) return html;
-  if (isElement(html?.[0])) return html[0];
-  return null;
-}
-
-export function getDocument(element = null) {
-  return element?.ownerDocument ?? globalThis.document;
+  const element = html?.nodeType === 1 ? html : html?.[0];
+  return element?.nodeType === 1 ? element : null;
 }

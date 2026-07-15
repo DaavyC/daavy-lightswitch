@@ -1,5 +1,5 @@
 import { MODULE_ID } from "./config.js";
-import { getDocument, getHTMLElement } from "./utils.js";
+import { getHTMLElement } from "./utils.js";
 
 const FEEDBACK_ENDPOINT = "https://feedback.daavyc.workers.dev";
 const FEEDBACK_TEMPLATE = `modules/${MODULE_ID}/templates/feedback.hbs`;
@@ -56,12 +56,21 @@ export class FeedbackForm extends HandlebarsApplicationMixin(ApplicationV2) {
     if (submitButton) submitButton.disabled = true;
 
     try {
+      const module = game.modules.get(MODULE_ID);
       const response = await fetch(FEEDBACK_ENDPOINT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(this.#buildPayload(category, message))
+        body: JSON.stringify({
+          message,
+          category,
+          moduleName: module?.title ?? MODULE_ID,
+          moduleVersion: module?.version ?? "",
+          foundryVersion: game.version ?? "",
+          systemId: game.system?.id ?? "",
+          systemVersion: game.system?.version ?? ""
+        })
       });
 
       if (!response.ok) throw new Error(`Feedback request failed with status ${response.status}.`);
@@ -76,20 +85,6 @@ export class FeedbackForm extends HandlebarsApplicationMixin(ApplicationV2) {
       if (submitButton) submitButton.disabled = false;
     }
   }
-
-  #buildPayload(category, message) {
-    const module = game.modules.get(MODULE_ID);
-
-    return {
-      message,
-      category,
-      moduleName: module?.title ?? MODULE_ID,
-      moduleVersion: module?.version ?? "",
-      foundryVersion: game.version ?? "",
-      systemId: game.system?.id ?? "",
-      systemVersion: game.system?.version ?? ""
-    };
-  }
 }
 
 export function injectFeedbackButton(renderedHtml) {
@@ -99,7 +94,7 @@ export function injectFeedbackButton(renderedHtml) {
   const firstGroup = container.querySelector(".daavy-lightswitch-settings-group");
   if (!firstGroup) return;
 
-  const documentRef = getDocument(container);
+  const documentRef = container.ownerDocument;
   const actions = documentRef.createElement("div");
   actions.className = FEEDBACK_ACTIONS_CLASS;
 

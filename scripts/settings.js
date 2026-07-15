@@ -88,7 +88,6 @@ function groupSettingRows(container, doc, groupKey, settingKeys) {
   rows[0].replaceWith(group);
 
   for (const row of rows) {
-    row.remove();
     row.classList.add("daavy-lightswitch-settings-row");
     group.appendChild(row);
   }
