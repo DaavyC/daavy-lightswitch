@@ -1,8 +1,9 @@
 import {
+  I18N_PREFIX,
   MODULE_ID,
   SETTINGS,
   SETTINGS_DEFAULTS
-} from "./config.js";
+} from "./constants.js";
 import { getHTMLElement } from "./utils.js";
 
 const INTERACTION_DISTANCE_GROUP = "InteractionDistance";
@@ -27,8 +28,8 @@ export function registerSettings(onChange) {
   ].forEach((key) => registerBooleanSetting(key, SETTINGS_DEFAULTS[key], onChange));
 
   game.settings.register(MODULE_ID, SETTINGS.INTERACTION_DISTANCE, {
-    name: `${MODULE_ID}.settings.${SETTINGS.INTERACTION_DISTANCE}.name`,
-    hint: `${MODULE_ID}.settings.${SETTINGS.INTERACTION_DISTANCE}.hint`,
+    name: `${getSettingI18nKey(SETTINGS.INTERACTION_DISTANCE)}.Name`,
+    hint: `${getSettingI18nKey(SETTINGS.INTERACTION_DISTANCE)}.Hint`,
     scope: "world",
     config: true,
     restricted: true,
@@ -44,9 +45,10 @@ export function registerSettings(onChange) {
 }
 
 function registerBooleanSetting(key, defaultValue, onChange) {
+  const i18nKey = getSettingI18nKey(key);
   game.settings.register(MODULE_ID, key, {
-    name: `${MODULE_ID}.settings.${key}.name`,
-    hint: `${MODULE_ID}.settings.${key}.hint`,
+    name: `${i18nKey}.Name`,
+    hint: `${i18nKey}.Hint`,
     scope: "world",
     config: true,
     type: Boolean,
@@ -60,8 +62,11 @@ export function getPlayerToggleDefault() {
 }
 
 export function shouldShowForGM() {
-  if (typeof game === "undefined") return false;
   return game.settings.get(MODULE_ID, SETTINGS.SHOW_FOR_GM) === true;
+}
+
+function getSettingI18nKey(key) {
+  return `${I18N_PREFIX}.Settings.${key[0].toUpperCase()}${key.slice(1)}`;
 }
 
 export function organizeSettingsConfig(app, html) {
@@ -113,7 +118,7 @@ function createGroup(doc, groupKey) {
 
   const title = doc.createElement("h3");
   title.id = `${MODULE_ID}-settings-group-${groupKey}`;
-  title.textContent = game.i18n.localize(`${MODULE_ID}.settings.groups.${groupKey}`);
+  title.textContent = game.i18n.localize(`${I18N_PREFIX}.Settings.Groups.${groupKey}`);
   title.className = "daavy-lightswitch-settings-group-title";
   group.setAttribute("aria-labelledby", title.id);
   group.appendChild(title);

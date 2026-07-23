@@ -1,4 +1,4 @@
-import { MODULE_ID } from "./config.js";
+import { I18N_PREFIX, MODULE_ID } from "./constants.js";
 import { getHTMLElement } from "./utils.js";
 
 const FEEDBACK_ENDPOINT = "https://feedback.daavyc.workers.dev";
@@ -6,7 +6,7 @@ const FEEDBACK_TEMPLATE = `modules/${MODULE_ID}/templates/feedback.hbs`;
 const DONATE_URL = "https://ko-fi.com/daavy";
 const DISCORD_URL = "https://discord.gg/ZmFZxdGrta";
 const MAX_MESSAGE_LENGTH = 3000;
-const I18N_PREFIX = `${MODULE_ID}.Feedback`;
+const FEEDBACK_I18N_PREFIX = `${I18N_PREFIX}.Feedback`;
 const CATEGORIES = ["Bug", "Suggestion"];
 const FEEDBACK_ACTIONS_CLASS = "daavy-lightswitch-settings-actions";
 
@@ -17,7 +17,7 @@ export class FeedbackForm extends HandlebarsApplicationMixin(ApplicationV2) {
     id: "daavy-lightswitch-feedback",
     tag: "form",
     window: {
-      title: `${I18N_PREFIX}.MenuLabel`,
+      title: `${FEEDBACK_I18N_PREFIX}.MenuLabel`,
       icon: "fa-solid fa-comment-dots",
       contentClasses: ["standard-form"]
     },
@@ -45,7 +45,7 @@ export class FeedbackForm extends HandlebarsApplicationMixin(ApplicationV2) {
     const category = String(formData.object.category ?? "").trim();
     const message = String(formData.object.message ?? "").trim();
     if (!CATEGORIES.includes(category) || !message || message.length > MAX_MESSAGE_LENGTH) {
-      ui.notifications.warn(game.i18n.localize(`${I18N_PREFIX}.Invalid`));
+      ui.notifications.warn(game.i18n.localize(`${FEEDBACK_I18N_PREFIX}.Invalid`));
       return;
     }
 
@@ -75,11 +75,11 @@ export class FeedbackForm extends HandlebarsApplicationMixin(ApplicationV2) {
 
       if (!response.ok) throw new Error(`Feedback request failed with status ${response.status}.`);
 
-      ui.notifications.info(game.i18n.localize(`${I18N_PREFIX}.Success`));
+      ui.notifications.info(game.i18n.localize(`${FEEDBACK_I18N_PREFIX}.Success`));
       await this.close();
     } catch (error) {
       console.error(`${MODULE_ID} | Unable to send feedback.`, error);
-      ui.notifications.error(game.i18n.localize(`${I18N_PREFIX}.Error`));
+      ui.notifications.error(game.i18n.localize(`${FEEDBACK_I18N_PREFIX}.Error`));
     } finally {
       this.#submitting = false;
       if (submitButton) submitButton.disabled = false;
@@ -101,20 +101,20 @@ export function injectFeedbackButton(renderedHtml) {
   const donateButton = documentRef.createElement("button");
   donateButton.type = "button";
   donateButton.className = "daavy-lightswitch-donate-action";
-  donateButton.innerHTML = `<i class="fa-solid fa-heart"></i> ${game.i18n.localize(`${MODULE_ID}.Donate.Label`)}`;
+  donateButton.innerHTML = `<i class="fa-solid fa-heart"></i> ${game.i18n.localize(`${I18N_PREFIX}.Donate.Label`)}`;
   donateButton.addEventListener("click", () => documentRef.defaultView.open(DONATE_URL, "_blank", "noopener,noreferrer"));
 
   const discordButton = documentRef.createElement("button");
   discordButton.type = "button";
   discordButton.className = "daavy-lightswitch-discord-action";
-  discordButton.innerHTML = `<i class="fa-brands fa-discord"></i> ${game.i18n.localize(`${MODULE_ID}.Discord.Label`)}`;
+  discordButton.innerHTML = `<i class="fa-brands fa-discord"></i> ${game.i18n.localize(`${I18N_PREFIX}.Discord.Label`)}`;
   discordButton.addEventListener("click", () => documentRef.defaultView.open(DISCORD_URL, "_blank", "noopener,noreferrer"));
 
   const feedbackButton = documentRef.createElement("button");
   feedbackButton.type = "button";
   feedbackButton.className = "daavy-lightswitch-feedback-action";
-  feedbackButton.title = game.i18n.localize(`${I18N_PREFIX}.MenuHint`);
-  feedbackButton.innerHTML = `<i class="fa-solid fa-comment-dots"></i> ${game.i18n.localize(`${I18N_PREFIX}.MenuLabel`)}`;
+  feedbackButton.title = game.i18n.localize(`${FEEDBACK_I18N_PREFIX}.MenuHint`);
+  feedbackButton.innerHTML = `<i class="fa-solid fa-comment-dots"></i> ${game.i18n.localize(`${FEEDBACK_I18N_PREFIX}.MenuLabel`)}`;
   feedbackButton.addEventListener("click", () => new FeedbackForm().render({ force: true }));
 
   actions.append(donateButton, discordButton, feedbackButton);

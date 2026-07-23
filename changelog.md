@@ -1,3 +1,6 @@
+##### 1.2.0
+- Added the Circuits feature, which links lightswitch behavior across multiple lights
+
 ##### 1.1.0
 - Added a setting to limit how far away players can interact with lights
 - Improved the Settings interface

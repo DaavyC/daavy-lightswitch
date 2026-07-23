@@ -1,30 +1,74 @@
 {
-  "daavy-lightswitch.settings.playerToggleDefault.name": "Allow Players by Default",
-  "daavy-lightswitch.settings.playerToggleDefault.hint": "Allow players to toggle newly created lights.",
-  "daavy-lightswitch.settings.showForGM.name": "Show Switches to GMs",
-  "daavy-lightswitch.settings.showForGM.hint": "Show light switch icons to GMs.",
-  "daavy-lightswitch.settings.limitInteractionDistance.name": "Limit Interaction Range",
-  "daavy-lightswitch.settings.limitInteractionDistance.hint": "Require a controlled token to be close enough to a light.",
-  "daavy-lightswitch.settings.interactionDistance.name": "Maximum Range",
-  "daavy-lightswitch.settings.interactionDistance.hint": "Set the interaction range in grid squares.",
-  "daavy-lightswitch.settings.distanceAffectsGM.name": "Affect GMs?",
-  "daavy-lightswitch.settings.distanceAffectsGM.hint": "Apply the range limit when a GM controls a token.",
-  "daavy-lightswitch.settings.groups.Settings": "Settings",
-  "daavy-lightswitch.settings.groups.InteractionDistance": "Interaction Range",
-  "daavy-lightswitch.ambientLightConfig.playerToggleEnabled.label": "Allow Player Toggle",
-  "daavy-lightswitch.ambientLightConfig.playerToggleEnabled.hint": "Allow players to turn this light on or off.",
-  "daavy-lightswitch.Feedback.MenuLabel": "Send Feedback",
-  "daavy-lightswitch.Feedback.MenuHint": "Send anonymous feedback about Daavy's Lightswitch.",
-  "daavy-lightswitch.Feedback.Category": "Category",
-  "daavy-lightswitch.Feedback.Categories.Bug": "Bug",
-  "daavy-lightswitch.Feedback.Categories.Suggestion": "Suggestion",
-  "daavy-lightswitch.Feedback.Message": "Message",
-  "daavy-lightswitch.Feedback.MessageHint": "Describe your feedback without including personal or private information.",
-  "daavy-lightswitch.Feedback.Cancel": "Cancel",
-  "daavy-lightswitch.Feedback.Send": "Send Feedback",
-  "daavy-lightswitch.Feedback.Invalid": "Choose a category and enter a message of up to 3,000 characters.",
-  "daavy-lightswitch.Feedback.Success": "Feedback sent. Thank you!",
-  "daavy-lightswitch.Feedback.Error": "Unable to send feedback. Please try again later.",
-  "daavy-lightswitch.Donate.Label": "Donate",
-  "daavy-lightswitch.Discord.Label": "Discord"
+  "DAAVY_LIGHTSWITCH": {
+    "Settings": {
+      "Groups": {
+        "Settings": "Settings",
+        "InteractionDistance": "Interaction Range"
+      },
+      "PlayerToggleDefault": {
+        "Name": "Allow Players by Default",
+        "Hint": "Allow players to toggle newly created lights."
+      },
+      "ShowForGM": {
+        "Name": "Show Switches to GMs",
+        "Hint": "Show light switch icons to GMs."
+      },
+      "LimitInteractionDistance": {
+        "Name": "Limit Interaction Range",
+        "Hint": "Require a controlled token to be close enough to a light."
+      },
+      "InteractionDistance": {
+        "Name": "Maximum Range",
+        "Hint": "Set the interaction range in grid squares."
+      },
+      "DistanceAffectsGM": {
+        "Name": "Affect GMs?",
+        "Hint": "Apply the range limit when a GM controls a token."
+      }
+    },
+    "AmbientLightConfig": {
+      "PlayerToggleEnabled": {
+        "Label": "Allow Player Toggle",
+        "Hint": "Allow players to turn this light on or off."
+      }
+    },
+    "Circuits": {
+      "Title": "Circuits",
+      "Description": "Connect lights so they switch on and off together.",
+      "Actions": {
+        "Connect": "Connect",
+        "Chain": "Chain",
+        "Select": "Select",
+        "SelectAll": "Select All",
+        "Delete": "Delete Selected",
+        "Remove": "Remove Connection"
+      },
+      "Shortcuts": {
+        "Select": "Hold <span class=\"reference\">SHIFT</span> then <span class=\"reference\">Click</span> or <span class=\"reference\">Drag</span>",
+        "SelectAll": "{mod} + A"
+      }
+    },
+    "Feedback": {
+      "MenuLabel": "Send Feedback",
+      "MenuHint": "Send anonymous feedback about Daavy's Lightswitch.",
+      "Category": "Category",
+      "Categories": {
+        "Bug": "Bug",
+        "Suggestion": "Suggestion"
+      },
+      "Message": "Message",
+      "MessageHint": "Describe your feedback without including personal or private information.",
+      "Cancel": "Cancel",
+      "Send": "Send Feedback",
+      "Invalid": "Choose a category and enter a message of up to 3,000 characters.",
+      "Success": "Feedback sent. Thank you!",
+      "Error": "Unable to send feedback. Please try again later."
+    },
+    "Donate": {
+      "Label": "Donate"
+    },
+    "Discord": {
+      "Label": "Discord"
+    }
+  }
 }

@@ -1,6 +1,6 @@
 # 💡 Daavy's Lightswitch
 
-A simple module for **Foundry VTT** that lets players turn map lights on and off by clicking interactive switch buttons on the screen.
+A **Foundry VTT** module that lets players control map lights with interactive switches.
 
 ---
 
@@ -14,6 +14,7 @@ A simple module for **Foundry VTT** that lets players turn map lights on and off
 - **🔌 Player Controls** — Allows players to toggle lights even if they are not the Game Master (GM).
 - **👁️ Smart Visibility** — Only shows light switches that players can see or have permission to use.
 - **⚡ Instant Toggle** — Turns lights on or off instantly when clicked.
+- **🔗 Light Circuits** — Lets GMs draw links between lights so an entire connected circuit switches together.
 
 ---
 
