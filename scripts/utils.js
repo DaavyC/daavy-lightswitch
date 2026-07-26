@@ -21,7 +21,3 @@ export function getHTMLElement(html) {
 export function getCanvasScale() {
   return canvas.stage?.scale?.x || 1;
 }
-
-export function getCanvasElement() {
-  return canvas.app.view;
-}

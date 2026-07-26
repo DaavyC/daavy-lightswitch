@@ -1,8 +1,7 @@
 import {
   I18N_PREFIX,
   MODULE_ID,
-  SETTINGS,
-  SETTINGS_DEFAULTS
+  SETTINGS
 } from "./constants.js";
 import { getHTMLElement } from "./utils.js";
 
@@ -20,12 +19,10 @@ const SETTINGS_GROUPS = {
 };
 
 export function registerSettings(onChange) {
-  [
-    SETTINGS.PLAYER_TOGGLE_DEFAULT,
-    SETTINGS.SHOW_FOR_GM,
-    SETTINGS.LIMIT_INTERACTION_DISTANCE,
-    SETTINGS.DISTANCE_AFFECTS_GM
-  ].forEach((key) => registerBooleanSetting(key, SETTINGS_DEFAULTS[key], onChange));
+  registerBooleanSetting(SETTINGS.PLAYER_TOGGLE_DEFAULT, true, onChange);
+  registerBooleanSetting(SETTINGS.SHOW_FOR_GM, true, onChange);
+  registerBooleanSetting(SETTINGS.LIMIT_INTERACTION_DISTANCE, false, onChange);
+  registerBooleanSetting(SETTINGS.DISTANCE_AFFECTS_GM, false, onChange);
 
   game.settings.register(MODULE_ID, SETTINGS.INTERACTION_DISTANCE, {
     name: `${getSettingI18nKey(SETTINGS.INTERACTION_DISTANCE)}.Name`,
@@ -39,7 +36,7 @@ export function registerSettings(onChange) {
       max: 20,
       step: 1
     },
-    default: SETTINGS_DEFAULTS[SETTINGS.INTERACTION_DISTANCE],
+    default: 5,
     onChange
   });
 }

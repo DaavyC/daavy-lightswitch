@@ -32,9 +32,9 @@ export function registerHooks({
     Hooks.on("canvasReady", refreshCanvas);
     Hooks.on("canvasPan", refreshCanvas);
     Hooks.on("sightRefresh", refreshLightSwitches);
-    Hooks.on("createAmbientLight", refreshAmbientLight);
-    Hooks.on("updateAmbientLight", refreshAmbientLight);
-    Hooks.on("deleteAmbientLight", refreshAmbientLight);
+    Hooks.on("createAmbientLight", scheduleCanvasRefresh);
+    Hooks.on("updateAmbientLight", scheduleCanvasRefresh);
+    Hooks.on("deleteAmbientLight", scheduleCanvasRefresh);
     Hooks.on("controlToken", refreshLightSwitches);
     Hooks.on("updateToken", refreshLightSwitches);
     Hooks.on("renderSceneControls", scheduleCanvasRefresh);
@@ -45,9 +45,5 @@ export function registerHooks({
   function refreshCanvas() {
     refreshLightSwitches();
     refreshCircuitLines();
-  }
-
-  function refreshAmbientLight() {
-    scheduleCanvasRefresh();
   }
 }

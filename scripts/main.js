@@ -14,7 +14,7 @@ import {
   TOGGLE_QUERY
 } from "./constants.js";
 import { registerHooks } from "./hooks.js";
-import { getCanvasElement, getCanvasScale, getHTMLElement, isPointWithinGridDistance, isTruthyValue } from "./utils.js";
+import { getCanvasScale, getHTMLElement, isPointWithinGridDistance, isTruthyValue } from "./utils.js";
 import {
   doesInteractionDistanceAffectGM,
   getInteractionDistance,
@@ -105,10 +105,9 @@ function buildValidatedToggleUpdates(light, user, { allowGM = false, tokenIds = 
 }
 
 function buildLightStateUpdates(lights, turnOff) {
-  return lights.flatMap((member) => {
-    if (isLightOff(member) === turnOff) return [];
-    return [{ _id: member.id, ...(turnOff ? buildTurnOffUpdate(member) : buildTurnOnUpdate(member)) }];
-  });
+  return lights
+    .filter((member) => isLightOff(member) !== turnOff)
+    .map((member) => ({ _id: member.id, ...(turnOff ? buildTurnOffUpdate(member) : buildTurnOnUpdate(member)) }));
 }
 
 function getCircuitMembers(light) {
@@ -300,11 +299,7 @@ function addCircuitTool(controls) {
         releaseCircuitPointer(circuitSelectionDrag?.pointerId);
       }
       circuitToolActive = active;
-      circuitShiftActive = active && game.keyboard.isModifierActive("SHIFT");
-      circuitDrag = null;
-      circuitChainSource = null;
-      circuitSelectionDrag = null;
-      selectedCircuitLightIds.clear();
+      clearCircuitInteractionState(active && game.keyboard.isModifierActive("SHIFT"));
       refreshCircuitLines();
     }
   };
@@ -327,11 +322,7 @@ function refreshCircuitLines() {
     circuitSceneId = canvas.scene?.id ?? null;
     releaseCircuitPointer(circuitDrag?.pointerId);
     releaseCircuitPointer(circuitSelectionDrag?.pointerId);
-    circuitDrag = null;
-    circuitChainSource = null;
-    circuitSelectionDrag = null;
-    selectedCircuitLightIds.clear();
-    circuitShiftActive = false;
+    clearCircuitInteractionState();
   }
 
   ensureCircuitLayer();
@@ -398,7 +389,7 @@ function createCircuitSelectionMarker(light, color) {
 }
 
 function installCircuitCanvasHandlers() {
-  const element = getCanvasElement();
+  const element = canvas.app.view;
   if (!element || circuitCanvasElement === element) return;
 
   circuitCanvasElement?.removeEventListener("pointerdown", handleCircuitPointerDown, true);
@@ -424,6 +415,14 @@ function isCircuitEditingActive() {
   return game.user.isGM && circuitToolActive && isLightingControlsActive();
 }
 
+function clearCircuitInteractionState(shiftActive = false) {
+  circuitDrag = null;
+  circuitChainSource = null;
+  circuitSelectionDrag = null;
+  selectedCircuitLightIds.clear();
+  circuitShiftActive = shiftActive;
+}
+
 function consumeCircuitEvent(event) {
   event.preventDefault();
   event.stopImmediatePropagation();
@@ -437,7 +436,7 @@ function handleCircuitPointerDown(event) {
   if (event.shiftKey) {
     consumeCircuitEvent(event);
     circuitChainSource = null;
-    if (light && isLightInCircuit(light.id)) {
+    if (light && getCircuitLinks(canvas.scene).some((link) => link.includes(light.id))) {
       if (selectedCircuitLightIds.has(light.id)) selectedCircuitLightIds.delete(light.id);
       else selectedCircuitLightIds.add(light.id);
       refreshCircuitLines();
@@ -716,10 +715,6 @@ function getLightAtCanvasPoint(point) {
     closestDistance = distance;
   }
   return closest;
-}
-
-function isLightInCircuit(lightId) {
-  return getCircuitLinks(canvas.scene).some(([firstId, secondId]) => firstId === lightId || secondId === lightId);
 }
 
 function refreshLightSwitches() {
