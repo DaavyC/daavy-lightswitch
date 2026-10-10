@@ -98,25 +98,38 @@ export function injectFeedbackButton(renderedHtml) {
   const actions = documentRef.createElement("div");
   actions.className = FEEDBACK_ACTIONS_CLASS;
 
-  const donateButton = documentRef.createElement("button");
-  donateButton.type = "button";
-  donateButton.className = "daavy-lightswitch-donate-action";
-  donateButton.innerHTML = `<i class="fa-solid fa-heart"></i> ${game.i18n.localize(`${I18N_PREFIX}.Donate.Label`)}`;
-  donateButton.addEventListener("click", () => documentRef.defaultView.open(DONATE_URL, "_blank", "noopener,noreferrer"));
-
-  const discordButton = documentRef.createElement("button");
-  discordButton.type = "button";
-  discordButton.className = "daavy-lightswitch-discord-action";
-  discordButton.innerHTML = `<i class="fa-brands fa-discord"></i> ${game.i18n.localize(`${I18N_PREFIX}.Discord.Label`)}`;
-  discordButton.addEventListener("click", () => documentRef.defaultView.open(DISCORD_URL, "_blank", "noopener,noreferrer"));
-
-  const feedbackButton = documentRef.createElement("button");
-  feedbackButton.type = "button";
-  feedbackButton.className = "daavy-lightswitch-feedback-action";
-  feedbackButton.title = game.i18n.localize(`${FEEDBACK_I18N_PREFIX}.MenuHint`);
-  feedbackButton.innerHTML = `<i class="fa-solid fa-comment-dots"></i> ${game.i18n.localize(`${FEEDBACK_I18N_PREFIX}.MenuLabel`)}`;
-  feedbackButton.addEventListener("click", () => new FeedbackForm().render({ force: true }));
-
-  actions.append(donateButton, discordButton, feedbackButton);
+  actions.append(
+    createActionButton(documentRef, {
+      className: "daavy-lightswitch-donate-action",
+      icon: "fa-solid fa-heart",
+      label: game.i18n.localize(`${I18N_PREFIX}.Donate.Label`),
+      onClick: () => documentRef.defaultView.open(DONATE_URL, "_blank", "noopener,noreferrer")
+    }),
+    createActionButton(documentRef, {
+      className: "daavy-lightswitch-discord-action",
+      icon: "fa-brands fa-discord",
+      label: game.i18n.localize(`${I18N_PREFIX}.Discord.Label`),
+      onClick: () => documentRef.defaultView.open(DISCORD_URL, "_blank", "noopener,noreferrer")
+    }),
+    createActionButton(documentRef, {
+      className: "daavy-lightswitch-feedback-action",
+      icon: "fa-solid fa-comment-dots",
+      label: game.i18n.localize(`${FEEDBACK_I18N_PREFIX}.MenuLabel`),
+      title: game.i18n.localize(`${FEEDBACK_I18N_PREFIX}.MenuHint`),
+      onClick: () => new FeedbackForm().render({ force: true })
+    })
+  );
   firstGroup.before(actions);
+}
+
+function createActionButton(documentRef, { className, icon, label, onClick, title }) {
+  const button = documentRef.createElement("button");
+  button.type = "button";
+  button.className = className;
+  const iconElement = documentRef.createElement("i");
+  iconElement.className = icon;
+  button.append(iconElement, ` ${label}`);
+  if (title !== undefined) button.title = title;
+  button.addEventListener("click", onClick);
+  return button;
 }

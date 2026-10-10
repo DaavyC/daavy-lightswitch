@@ -3,33 +3,33 @@
     "Settings": {
       "Groups": {
         "Settings": "Settings",
-        "InteractionDistance": "Interaction Range"
+        "InteractionDistance": "Interaction range"
       },
       "PlayerToggleDefault": {
-        "Name": "Allow Players by Default",
+        "Name": "Allow players by default",
         "Hint": "Allow players to toggle newly created lights."
       },
       "ShowForGM": {
-        "Name": "Show Switches to GMs",
+        "Name": "Show switches to GMs",
         "Hint": "Show light switch icons to GMs."
       },
       "LimitInteractionDistance": {
-        "Name": "Limit Interaction Range",
-        "Hint": "Require a controlled token to be close enough to a light."
+        "Name": "Limit interaction range",
+        "Hint": "Require a controlled token within range to use a light switch."
       },
       "InteractionDistance": {
-        "Name": "Maximum Range",
-        "Hint": "Set the interaction range in grid squares."
+        "Name": "Maximum range",
+        "Hint": "Set the range in grid squares. The default is 5, and the range is 0 to 20."
       },
       "DistanceAffectsGM": {
-        "Name": "Affect GMs?",
-        "Hint": "Apply the range limit when a GM controls a token."
+        "Name": "Apply range limit to GMs",
+        "Hint": "Apply the range limit to GMs with a controlled token."
       }
     },
     "AmbientLightConfig": {
       "PlayerToggleEnabled": {
-        "Label": "Allow Player Toggle",
-        "Hint": "Allow players to turn this light on or off."
+        "Label": "Allow player toggle",
+        "Hint": "Allow players to turn this light and its connected circuit on or off."
       }
     },
     "Circuits": {
@@ -39,30 +39,30 @@
         "Connect": "Connect",
         "Chain": "Chain",
         "Select": "Select",
-        "SelectAll": "Select All",
-        "Delete": "Delete Selected",
-        "Remove": "Remove Connection"
+        "SelectAll": "Select all",
+        "Delete": "Delete selected",
+        "Remove": "Remove connection"
       },
       "Shortcuts": {
-        "Select": "Hold <span class=\"reference\">SHIFT</span> then <span class=\"reference\">Click</span> or <span class=\"reference\">Drag</span>",
+        "Select": "Hold <span class=\"reference\">SHIFT</span>, then click or drag",
         "SelectAll": "{mod} + A"
       }
     },
     "Feedback": {
-      "MenuLabel": "Send Feedback",
-      "MenuHint": "Send anonymous feedback about Daavy's Lightswitch.",
+      "MenuLabel": "Send feedback",
+      "MenuHint": "Send feedback about Daavy's Lightswitch.",
       "Category": "Category",
       "Categories": {
         "Bug": "Bug",
         "Suggestion": "Suggestion"
       },
       "Message": "Message",
-      "MessageHint": "Describe your feedback without including personal or private information.",
+      "MessageHint": "Describe the issue or suggestion. Do not include personal or private information.",
       "Cancel": "Cancel",
-      "Send": "Send Feedback",
+      "Send": "Send feedback",
       "Invalid": "Choose a category and enter a message of up to 3,000 characters.",
-      "Success": "Feedback sent. Thank you!",
-      "Error": "Unable to send feedback. Please try again later."
+      "Success": "Feedback sent.",
+      "Error": "Could not send feedback. Try again later."
     },
     "Donate": {
       "Label": "Donate"

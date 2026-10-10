@@ -13,6 +13,7 @@ export const FLAGS = {
   PLAYER_TOGGLE_ENABLED: "playerToggleEnabled",
   IS_OFF: "isOff",
   RESTORE_CONFIG: "restoreConfig",
+  RESTORE_HIDDEN: "restoreHidden",
   CIRCUIT_LINKS: "circuitLinks"
 };
 

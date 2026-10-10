@@ -8,6 +8,7 @@ export function registerHooks({
   normalizePlayerToggleFlag,
   refreshCircuitLines,
   refreshLightSwitches,
+  resetCircuitInteraction,
   registerSocket,
   scheduleCanvasRefresh,
   setDefaultPlayerToggleFlag
@@ -30,6 +31,7 @@ export function registerHooks({
     Hooks.on("preUpdateAmbientLight", normalizePlayerToggleFlag);
     Hooks.on("renderAmbientLightConfig", addPlayerToggleField);
     Hooks.on("canvasReady", refreshCanvas);
+    Hooks.on("canvasTearDown", resetCircuitInteraction);
     Hooks.on("canvasPan", refreshCanvas);
     Hooks.on("sightRefresh", refreshLightSwitches);
     Hooks.on("createAmbientLight", scheduleCanvasRefresh);

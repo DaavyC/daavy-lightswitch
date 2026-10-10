@@ -24,27 +24,29 @@ import {
 } from "./settings.js";
 
 function isToggleAllowed(light) {
-  return isTruthyValue(light?.getFlag?.(MODULE_ID, FLAGS.PLAYER_TOGGLE_ENABLED));
+  return isTruthyValue(light.getFlag(MODULE_ID, FLAGS.PLAYER_TOGGLE_ENABLED));
 }
 
 function isLightOff(light) {
-  return light?.getFlag?.(MODULE_ID, FLAGS.IS_OFF) === true;
+  return light.getFlag(MODULE_ID, FLAGS.IS_OFF) === true;
 }
 
 function buildTurnOffUpdate(light) {
   return {
     hidden: true,
     [IS_OFF_PATH]: true,
-    [RESTORE_CONFIG_PATH]: structuredClone(light?._source?.config ?? {})
+    [RESTORE_CONFIG_PATH]: structuredClone(light._source.config),
+    [`flags.${MODULE_ID}.${FLAGS.RESTORE_HIDDEN}`]: light.hidden
   };
 }
 
 function buildTurnOnUpdate(light) {
-  const restoreConfig = light?.getFlag?.(MODULE_ID, FLAGS.RESTORE_CONFIG);
+  const restoreConfig = light.getFlag(MODULE_ID, FLAGS.RESTORE_CONFIG);
   const update = {
-    hidden: false,
+    hidden: light.getFlag(MODULE_ID, FLAGS.RESTORE_HIDDEN) === true,
     [IS_OFF_PATH]: false,
-    [`flags.${MODULE_ID}.-=${FLAGS.RESTORE_CONFIG}`]: null
+    [`flags.${MODULE_ID}.-=${FLAGS.RESTORE_CONFIG}`]: null,
+    [`flags.${MODULE_ID}.-=${FLAGS.RESTORE_HIDDEN}`]: null
   };
 
   if (restoreConfig && typeof restoreConfig === "object") update.config = structuredClone(restoreConfig);
@@ -76,13 +78,17 @@ async function requestLightToggle(light) {
 
   try {
     return await gm.query(TOGGLE_QUERY, ids, { timeout: 5000 });
-  } catch {
+  } catch (error) {
+    console.error(`${MODULE_ID} | Light toggle query failed`, error);
     return { ok: false, reason: "query-failed" };
   }
 }
 
 async function handleToggleLightQuery(payload, { user } = {}) {
   if (!game.user.isGM) return { ok: false, reason: "not-gm" };
+  if (!isValidToggleQuery(payload) || !user || user.isGM || user.viewedScene !== payload.sceneId) {
+    return { ok: false, reason: "rejected" };
+  }
 
   const scene = game.scenes.get(payload?.sceneId);
   const light = scene?.getEmbeddedDocument(AMBIENT_LIGHT_TYPE, payload?.lightId);
@@ -94,8 +100,15 @@ async function handleToggleLightQuery(payload, { user } = {}) {
   return { ok: true };
 }
 
+function isValidToggleQuery(payload) {
+  if (!payload || typeof payload.sceneId !== "string" || typeof payload.lightId !== "string") return false;
+  return payload.tokenIds === undefined || (Array.isArray(payload.tokenIds)
+    && payload.tokenIds.every((id) => typeof id === "string"));
+}
+
 function buildValidatedToggleUpdates(light, user, { allowGM = false, tokenIds = [] } = {}) {
   if (!light || !user) return null;
+  if (light.hidden && !isLightOff(light)) return null;
   if (user.isGM && !allowGM) return null;
   if (!isInteractionInRange(light, user, tokenIds)) return null;
   if (!isToggleAllowed(light)) return null;
@@ -256,6 +269,7 @@ function insertPlayerToggleGroup(element, group) {
 
 let switchLayer;
 let pendingCanvasRefresh = null;
+
 let circuitLayer;
 let circuitToolActive = false;
 let circuitDrag = null;
@@ -266,6 +280,8 @@ let circuitShiftActive = false;
 let circuitCanvasElement;
 let circuitKeyboardHandlerInstalled = false;
 let circuitSceneId = null;
+let circuitInteractionGeneration = 0;
+let circuitUpdatePending = false;
 
 function addCircuitTool(controls) {
   const lighting = controls?.lighting;
@@ -331,6 +347,11 @@ function refreshCircuitLines() {
   if (!game.user.isGM || !isLightingControlsActive()) return;
 
   const lights = new Map((canvas.lighting?.placeables ?? []).map((placeable) => [placeable.document.id, placeable.document]));
+  drawCircuitLinks(lights);
+  if (circuitToolActive) drawCircuitSelection(lights);
+}
+
+function drawCircuitLinks(lights) {
   const lineWidth = CIRCUIT_LINE_WIDTH / getCanvasScale();
   const links = getCircuitLinks(canvas.scene);
   for (const [firstId, secondId] of links) {
@@ -338,26 +359,24 @@ function refreshCircuitLines() {
     const second = lights.get(secondId);
     if (!first || !second) continue;
     const selected = circuitToolActive && (selectedCircuitLightIds.has(firstId) || selectedCircuitLightIds.has(secondId));
-    circuitLayer.addChild(createCircuitLine(
-      first,
-      second,
-      selected ? lineWidth * 1.5 : lineWidth,
-      selected ? 1 : 0.95,
-      selected ? CIRCUIT_SELECTED_COLOR : CIRCUIT_COLOR
-    ));
+    circuitLayer.addChild(createCircuitLine(first, second, {
+      width: selected ? lineWidth * 1.5 : lineWidth,
+      alpha: selected ? 1 : 0.95,
+      color: selected ? CIRCUIT_SELECTED_COLOR : CIRCUIT_COLOR
+    }));
   }
+}
 
-  if (circuitToolActive) {
-    if (circuitShiftActive) {
-      for (const id of new Set(links.flat())) {
-        const light = lights.get(id);
-        if (light && !selectedCircuitLightIds.has(id)) circuitLayer.addChild(createCircuitSelectionMarker(light, CIRCUIT_COLOR));
-      }
-    }
-    for (const id of selectedCircuitLightIds) {
+function drawCircuitSelection(lights) {
+  if (circuitShiftActive) {
+    for (const id of new Set(getCircuitLinks(canvas.scene).flat())) {
       const light = lights.get(id);
-      if (light) circuitLayer.addChild(createCircuitSelectionMarker(light, CIRCUIT_SELECTED_COLOR));
+      if (light && !selectedCircuitLightIds.has(id)) circuitLayer.addChild(createCircuitSelectionMarker(light, CIRCUIT_COLOR));
     }
+  }
+  for (const id of selectedCircuitLightIds) {
+    const light = lights.get(id);
+    if (light) circuitLayer.addChild(createCircuitSelectionMarker(light, CIRCUIT_SELECTED_COLOR));
   }
 }
 
@@ -372,7 +391,7 @@ function ensureCircuitLayer() {
   canvas.stage.addChild(circuitLayer);
 }
 
-function createCircuitLine(first, second, width, alpha = 0.95, color = CIRCUIT_COLOR) {
+function createCircuitLine(first, second, { width, alpha = 0.95, color = CIRCUIT_COLOR }) {
   return new PIXI.Graphics()
     .lineStyle(width, color, alpha)
     .moveTo(first.x, first.y)
@@ -392,17 +411,18 @@ function installCircuitCanvasHandlers() {
   const element = canvas.app.view;
   if (!element || circuitCanvasElement === element) return;
 
-  circuitCanvasElement?.removeEventListener("pointerdown", handleCircuitPointerDown, true);
-  circuitCanvasElement?.removeEventListener("pointermove", handleCircuitPointerMove, true);
-  circuitCanvasElement?.removeEventListener("pointerup", handleCircuitPointerUp, true);
-  circuitCanvasElement?.removeEventListener("pointercancel", cancelCircuitInteraction, true);
-  circuitCanvasElement?.removeEventListener("contextmenu", handleCircuitContextMenu, true);
+  const handlers = {
+    pointerdown: handleCircuitPointerDown,
+    pointermove: handleCircuitPointerMove,
+    pointerup: handleCircuitPointerUp,
+    pointercancel: cancelCircuitInteraction,
+    contextmenu: handleCircuitContextMenu
+  };
+  for (const [type, handler] of Object.entries(handlers)) {
+    circuitCanvasElement?.removeEventListener(type, handler, true);
+    element.addEventListener(type, handler, true);
+  }
   circuitCanvasElement = element;
-  element.addEventListener("pointerdown", handleCircuitPointerDown, true);
-  element.addEventListener("pointermove", handleCircuitPointerMove, true);
-  element.addEventListener("pointerup", handleCircuitPointerUp, true);
-  element.addEventListener("pointercancel", cancelCircuitInteraction, true);
-  element.addEventListener("contextmenu", handleCircuitContextMenu, true);
   if (!circuitKeyboardHandlerInstalled) {
     document.addEventListener("keydown", handleCircuitKeyDown, true);
     document.addEventListener("keyup", handleCircuitKeyUp, true);
@@ -416,11 +436,18 @@ function isCircuitEditingActive() {
 }
 
 function clearCircuitInteractionState(shiftActive = false) {
+  circuitInteractionGeneration += 1;
   circuitDrag = null;
   circuitChainSource = null;
   circuitSelectionDrag = null;
   selectedCircuitLightIds.clear();
   circuitShiftActive = shiftActive;
+}
+
+function resetCircuitInteraction() {
+  releaseCircuitPointer(circuitDrag?.pointerId);
+  releaseCircuitPointer(circuitSelectionDrag?.pointerId);
+  clearCircuitInteractionState();
 }
 
 function consumeCircuitEvent(event) {
@@ -430,21 +457,16 @@ function consumeCircuitEvent(event) {
 
 function handleCircuitPointerDown(event) {
   if (event.button !== 0 || !isCircuitEditingActive()) return;
+  if (circuitUpdatePending) {
+    consumeCircuitEvent(event);
+    return;
+  }
+  circuitInteractionGeneration += 1;
   const point = getCanvasPoint(event);
   const light = getLightAtCanvasPoint(point);
 
   if (event.shiftKey) {
-    consumeCircuitEvent(event);
-    circuitChainSource = null;
-    if (light && getCircuitLinks(canvas.scene).some((link) => link.includes(light.id))) {
-      if (selectedCircuitLightIds.has(light.id)) selectedCircuitLightIds.delete(light.id);
-      else selectedCircuitLightIds.add(light.id);
-      refreshCircuitLines();
-      return;
-    }
-
-    circuitSelectionDrag = { origin: point, pointerId: event.pointerId };
-    circuitCanvasElement.setPointerCapture?.(event.pointerId);
+    startCircuitSelection(event, point, light);
     return;
   }
 
@@ -458,18 +480,7 @@ function handleCircuitPointerDown(event) {
   if (circuitChainSource) {
     if (!light || light.id === circuitChainSource.id) return;
     consumeCircuitEvent(event);
-    const source = circuitChainSource;
-    const keepChaining = event.ctrlKey || event.metaKey;
-    circuitChainSource = null;
-    refreshCircuitLines();
-    addCircuitLink(source.id, light.id).then((linked) => {
-      if (linked && keepChaining) circuitChainSource = light;
-      else if (!linked) circuitChainSource = source;
-      refreshCircuitLines();
-    }).catch((error) => {
-      circuitChainSource = source;
-      console.error(`${MODULE_ID} | Failed to link circuit lights`, error);
-    });
+    connectCircuitChain(event, light);
     return;
   }
 
@@ -478,6 +489,36 @@ function handleCircuitPointerDown(event) {
   consumeCircuitEvent(event);
   circuitDrag = { light, pointerId: event.pointerId };
   circuitCanvasElement.setPointerCapture?.(event.pointerId);
+}
+
+function startCircuitSelection(event, point, light) {
+  consumeCircuitEvent(event);
+  circuitChainSource = null;
+  if (light && getCircuitLinks(canvas.scene).some((link) => link.includes(light.id))) {
+    if (selectedCircuitLightIds.has(light.id)) selectedCircuitLightIds.delete(light.id);
+    else selectedCircuitLightIds.add(light.id);
+    refreshCircuitLines();
+    return;
+  }
+  circuitSelectionDrag = { origin: point, pointerId: event.pointerId };
+  circuitCanvasElement.setPointerCapture?.(event.pointerId);
+}
+
+function connectCircuitChain(event, light) {
+  const source = circuitChainSource;
+  const generation = circuitInteractionGeneration;
+  const keepChaining = event.ctrlKey || event.metaKey;
+  circuitChainSource = null;
+  refreshCircuitLines();
+  addCircuitLink(source.id, light.id).then((linked) => {
+    if (generation !== circuitInteractionGeneration) return;
+    if (linked && keepChaining) circuitChainSource = light;
+    else if (!linked) circuitChainSource = source;
+    refreshCircuitLines();
+  }).catch((error) => {
+    if (generation === circuitInteractionGeneration) circuitChainSource = source;
+    console.error(`${MODULE_ID} | Failed to link circuit lights`, error);
+  });
 }
 
 function handleCircuitPointerMove(event) {
@@ -509,13 +550,7 @@ function handleCircuitPointerMove(event) {
 function handleCircuitPointerUp(event) {
   if (circuitSelectionDrag && event.pointerId === circuitSelectionDrag.pointerId) {
     consumeCircuitEvent(event);
-    const rectangle = getCircuitRectangle(circuitSelectionDrag.origin, getCanvasPoint(event));
-    const circuitIds = new Set(getCircuitLinks(canvas.scene).flat());
-    for (const placeable of canvas.lighting?.placeables ?? []) {
-      const { id, x, y } = placeable.document;
-      if (circuitIds.has(id) && x >= rectangle.x && x <= rectangle.x + rectangle.width
-        && y >= rectangle.y && y <= rectangle.y + rectangle.height) selectedCircuitLightIds.add(id);
-    }
+    selectCircuitLightsInRectangle(getCircuitRectangle(circuitSelectionDrag.origin, getCanvasPoint(event)));
     finishCircuitSelection();
     return;
   }
@@ -526,20 +561,31 @@ function handleCircuitPointerUp(event) {
   const source = circuitDrag.light;
   const target = getLightAtCanvasPoint(getCanvasPoint(event));
   const keepChaining = event.ctrlKey || event.metaKey;
+  const generation = circuitInteractionGeneration;
   finishCircuitDrag();
   if (!target || target.id === source.id) return;
 
   addCircuitLink(source.id, target.id).then((linked) => {
+    if (generation !== circuitInteractionGeneration) return;
     if (keepChaining) circuitChainSource = linked ? target : source;
     refreshCircuitLines();
   }).catch((error) => {
-    if (keepChaining) circuitChainSource = source;
+    if (generation === circuitInteractionGeneration && keepChaining) circuitChainSource = source;
     console.error(`${MODULE_ID} | Failed to link circuit lights`, error);
   });
 }
 
 function drawCircuitPreview(source, end) {
-  circuitLayer.addChild(createCircuitLine(source, end, CIRCUIT_LINE_WIDTH / getCanvasScale(), 0.65));
+  circuitLayer.addChild(createCircuitLine(source, end, { width: CIRCUIT_LINE_WIDTH / getCanvasScale(), alpha: 0.65 }));
+}
+
+function selectCircuitLightsInRectangle(rectangle) {
+  const circuitIds = new Set(getCircuitLinks(canvas.scene).flat());
+  for (const placeable of canvas.lighting?.placeables ?? []) {
+    const { id, x, y } = placeable.document;
+    if (circuitIds.has(id) && x >= rectangle.x && x <= rectangle.x + rectangle.width
+      && y >= rectangle.y && y <= rectangle.y + rectangle.height) selectedCircuitLightIds.add(id);
+  }
 }
 
 function drawCircuitSelectionPreview(origin, destination) {
@@ -576,6 +622,7 @@ function finishCircuitSelection() {
 }
 
 function cancelCircuitInteraction(event) {
+  circuitInteractionGeneration += 1;
   finishCircuitDrag();
   finishCircuitSelection();
   circuitChainSource = null;
@@ -590,6 +637,16 @@ function releaseCircuitPointer(pointerId) {
 }
 
 async function addCircuitLink(firstId, secondId) {
+  if (circuitUpdatePending) return false;
+  circuitUpdatePending = true;
+  try {
+    return await connectCircuitLights(firstId, secondId);
+  } finally {
+    circuitUpdatePending = false;
+  }
+}
+
+async function connectCircuitLights(firstId, secondId) {
   const scene = canvas.scene;
   const source = scene.getEmbeddedDocument(AMBIENT_LIGHT_TYPE, firstId);
   if (!source || !scene.getEmbeddedDocument(AMBIENT_LIGHT_TYPE, secondId)) return false;
@@ -601,8 +658,22 @@ async function addCircuitLink(firstId, secondId) {
   await scene.setFlag(MODULE_ID, FLAGS.CIRCUIT_LINKS, [...links, link]);
 
   const updates = buildLightStateUpdates(getCircuitMembers(source), turnOff);
-  if (updates.length) await scene.updateEmbeddedDocuments(AMBIENT_LIGHT_TYPE, updates);
+  try {
+    if (updates.length) await scene.updateEmbeddedDocuments(AMBIENT_LIGHT_TYPE, updates);
+  } catch (error) {
+    await revertCircuitLink(scene, link, error);
+    throw error;
+  }
   return true;
+}
+
+async function revertCircuitLink(scene, link, error) {
+  const remaining = getCircuitLinks(scene).filter(([firstId, secondId]) => firstId !== link[0] || secondId !== link[1]);
+  try {
+    await scene.setFlag(MODULE_ID, FLAGS.CIRCUIT_LINKS, remaining);
+  } catch (rollbackError) {
+    throw new AggregateError([error, rollbackError], "Failed to synchronize circuit lights and remove the connection.");
+  }
 }
 
 function handleCircuitKeyDown(event) {
@@ -618,18 +689,12 @@ function handleCircuitKeyDown(event) {
 
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "a") {
     consumeCircuitEvent(event);
-    circuitChainSource = null;
-    selectedCircuitLightIds.clear();
-    for (const [firstId, secondId] of getCircuitLinks(canvas.scene)) {
-      selectedCircuitLightIds.add(firstId);
-      selectedCircuitLightIds.add(secondId);
-    }
-    refreshCircuitLines();
+    selectAllCircuitLights();
     return;
   }
 
   if (event.key === "Escape") {
-    if (!circuitChainSource && !circuitDrag && !circuitSelectionDrag && !selectedCircuitLightIds.size) return;
+    if (!circuitUpdatePending && !circuitChainSource && !circuitDrag && !circuitSelectionDrag && !selectedCircuitLightIds.size) return;
     consumeCircuitEvent(event);
     selectedCircuitLightIds.clear();
     cancelCircuitInteraction();
@@ -637,6 +702,25 @@ function handleCircuitKeyDown(event) {
   }
 
   if (!selectedCircuitLightIds.size || !["Backspace", "Delete"].includes(event.key)) return;
+  deleteSelectedCircuitLinks(event);
+}
+
+function selectAllCircuitLights() {
+  circuitInteractionGeneration += 1;
+  circuitChainSource = null;
+  selectedCircuitLightIds.clear();
+  for (const [firstId, secondId] of getCircuitLinks(canvas.scene)) {
+    selectedCircuitLightIds.add(firstId);
+    selectedCircuitLightIds.add(secondId);
+  }
+  refreshCircuitLines();
+}
+
+function deleteSelectedCircuitLinks(event) {
+  if (circuitUpdatePending) {
+    consumeCircuitEvent(event);
+    return;
+  }
   const links = getCircuitLinks(canvas.scene);
   const remaining = links.filter(([firstId, secondId]) => (
     !selectedCircuitLightIds.has(firstId) && !selectedCircuitLightIds.has(secondId)
@@ -645,15 +729,13 @@ function handleCircuitKeyDown(event) {
 
   consumeCircuitEvent(event);
   selectedCircuitLightIds.clear();
-  canvas.scene.setFlag(MODULE_ID, FLAGS.CIRCUIT_LINKS, remaining).then(refreshCircuitLines).catch((error) => {
+  saveCircuitLinks(remaining).then(refreshCircuitLines).catch((error) => {
     console.error(`${MODULE_ID} | Failed to delete selected circuit links`, error);
   });
 }
 
 function handleCircuitKeyUp(event) {
-  if (event.key !== "Shift" || !circuitShiftActive) return;
-  circuitShiftActive = false;
-  refreshCircuitLines();
+  if (event.key === "Shift") handleCircuitWindowBlur();
 }
 
 function handleCircuitWindowBlur() {
@@ -664,6 +746,10 @@ function handleCircuitWindowBlur() {
 
 function handleCircuitContextMenu(event) {
   if (!isCircuitEditingActive()) return;
+  if (circuitUpdatePending) {
+    consumeCircuitEvent(event);
+    return;
+  }
   const point = getCanvasPoint(event);
   const links = getCircuitLinks(canvas.scene);
   const index = findCircuitLinkAtPoint(links, point);
@@ -677,9 +763,18 @@ function handleCircuitContextMenu(event) {
 
   consumeCircuitEvent(event);
   links.splice(index, 1);
-  canvas.scene.setFlag(MODULE_ID, FLAGS.CIRCUIT_LINKS, links).catch((error) => {
+  saveCircuitLinks(links).catch((error) => {
     console.error(`${MODULE_ID} | Failed to unlink circuit lights`, error);
   });
+}
+
+async function saveCircuitLinks(links) {
+  circuitUpdatePending = true;
+  try {
+    await canvas.scene.setFlag(MODULE_ID, FLAGS.CIRCUIT_LINKS, links);
+  } finally {
+    circuitUpdatePending = false;
+  }
 }
 
 function findCircuitLinkAtPoint(links, point) {
@@ -745,13 +840,11 @@ function ensureSwitchLayer() {
 }
 
 function shouldShowSwitch(placeable) {
-  const light = placeable?.document;
-  if (!light || isLightingControlsActive()) return false;
+  const light = placeable.document;
   if (light.hidden && !isLightOff(light)) return false;
   if (!isToggleAllowed(light)) return false;
   if (!isInteractionInRange(light, game.user, getControlledTokenIds())) return false;
-  if (game.user.isGM) return shouldShowForGM();
-  return canPlayerSeeLight(placeable);
+  return game.user.isGM || canPlayerSeeLight(placeable);
 }
 
 function canPlayerSeeLight(placeable) {
@@ -759,7 +852,7 @@ function canPlayerSeeLight(placeable) {
   if (!isLightOff(light) && (placeable.visible === false || placeable.renderable === false)) return false;
 
   const visibility = canvas.visibility ?? canvas.effects?.visibility;
-  if (typeof visibility?.testVisibility !== "function") return true;
+  if (typeof visibility?.testVisibility !== "function") return false;
 
   const options = isLightOff(light) ? { tolerance: 0 } : { object: placeable, tolerance: 0 };
   return visibility.testVisibility({ x: light.x, y: light.y }, options) === true;
@@ -796,7 +889,7 @@ function handleSwitchPointerDown(event, light) {
   event.preventDefault?.();
   event.stopPropagation();
   requestLightToggle(light).catch((error) => {
-    console.error(`${MODULE_ID} | Failed to toggle light from PIXI button`, error);
+    console.error(`${MODULE_ID} | Failed to toggle light`, error);
   });
 }
 
@@ -806,6 +899,7 @@ registerHooks({
   normalizePlayerToggleFlag,
   refreshCircuitLines,
   refreshLightSwitches,
+  resetCircuitInteraction,
   registerSocket,
   scheduleCanvasRefresh,
   setDefaultPlayerToggleFlag
