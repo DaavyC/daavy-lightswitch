@@ -11,6 +11,7 @@ import {
   MODULE_ID,
   PLAYER_TOGGLE_PATH,
   RESTORE_CONFIG_PATH,
+  SWITCH_ICON_PATH,
   TOGGLE_QUERY
 } from "./constants.js";
 import { registerHooks } from "./hooks.js";
@@ -18,6 +19,7 @@ import { getCanvasScale, getHTMLElement, isPointWithinGridDistance, isTruthyValu
 import {
   doesInteractionDistanceAffectGM,
   getInteractionDistance,
+  getDefaultSwitchIcon,
   getPlayerToggleDefault,
   isInteractionDistanceLimited,
   shouldShowForGM
@@ -200,11 +202,20 @@ function getControlledTokenIds() {
 }
 
 function setDefaultPlayerToggleFlag(document, creationData) {
-  const currentValue = getFlagUpdateValue(creationData);
+  const currentValue = getFlagUpdateValue(creationData, PLAYER_TOGGLE_PATH);
   const value = currentValue === undefined ? getPlayerToggleDefault() : isTruthyValue(currentValue);
 
   document.updateSource?.({ [PLAYER_TOGGLE_PATH]: value });
   foundry.utils.setProperty(creationData, PLAYER_TOGGLE_PATH, value);
+}
+
+function setDefaultSwitchIconFlag(document, creationData) {
+  if (getFlagUpdateValue(creationData, SWITCH_ICON_PATH) !== undefined
+    || document.getFlag(MODULE_ID, FLAGS.SWITCH_ICON) !== undefined) return;
+  const icon = getDefaultSwitchIcon();
+  if (!icon) return;
+  document.updateSource({ [SWITCH_ICON_PATH]: icon });
+  foundry.utils.setProperty(creationData, SWITCH_ICON_PATH, icon);
 }
 
 function normalizePlayerToggleFlag(document, change) {
@@ -214,10 +225,10 @@ function normalizePlayerToggleFlag(document, change) {
   }
 }
 
-function getFlagUpdateValue(creationData) {
-  if (Object.hasOwn(creationData, PLAYER_TOGGLE_PATH)) return creationData[PLAYER_TOGGLE_PATH];
-  if (!foundry.utils.hasProperty(creationData, PLAYER_TOGGLE_PATH)) return undefined;
-  return foundry.utils.getProperty(creationData, PLAYER_TOGGLE_PATH);
+function getFlagUpdateValue(creationData, path) {
+  if (Object.hasOwn(creationData, path)) return creationData[path];
+  if (!foundry.utils.hasProperty(creationData, path)) return undefined;
+  return foundry.utils.getProperty(creationData, path);
 }
 
 function addPlayerToggleField(app, html) {
@@ -225,6 +236,7 @@ function addPlayerToggleField(app, html) {
 
   const element = getHTMLElement(html);
   if (!element) return;
+  if (element.querySelector(".daavy-lightswitch-light-config")) return;
 
   const currentValue = app.document.getFlag(MODULE_ID, FLAGS.PLAYER_TOGGLE_ENABLED);
   const checked = currentValue === undefined ? getPlayerToggleDefault() : isTruthyValue(currentValue);
@@ -238,8 +250,27 @@ function addPlayerToggleField(app, html) {
   });
 
   group.prepend(hidden);
-  insertPlayerToggleGroup(element, group);
+  const fieldset = document.createElement("fieldset");
+  fieldset.className = "daavy-lightswitch-light-config";
+  const legend = document.createElement("legend");
+  legend.textContent = game.i18n.localize(`${I18N_PREFIX}.AmbientLightConfig.Title`);
+  fieldset.append(legend, group, createSwitchIconField(app));
+  insertPlayerToggleGroup(element, fieldset);
   app.setPosition?.();
+}
+
+function createSwitchIconField(app) {
+  const input = document.createElement("file-picker");
+  input.setAttribute("name", SWITCH_ICON_PATH);
+  input.setAttribute("type", "image");
+  input.setAttribute("value", app.document.getFlag(MODULE_ID, FLAGS.SWITCH_ICON) ?? "");
+  return foundry.applications.fields.createFormGroup({
+    input,
+    rootId: app.id,
+    label: `${I18N_PREFIX}.AmbientLightConfig.SwitchIcon.Label`,
+    hint: `${I18N_PREFIX}.AmbientLightConfig.SwitchIcon.Hint`,
+    localize: true
+  });
 }
 
 function createPlayerToggleInput(type, value, checked = false) {
@@ -817,13 +848,18 @@ function refreshLightSwitches() {
 
   ensureSwitchLayer();
   switchLayer.removeChildren().forEach((child) => child.destroy({ children: true }));
-  if (isLightingControlsActive()) return;
-  if (game.user.isGM && !shouldShowForGM()) return;
+  if (isLightingControlsActive() || (game.user.isGM && !shouldShowForGM())) {
+    clearSwitchIcons();
+    return;
+  }
 
+  const visibleIds = new Set();
   for (const placeable of canvas.lighting?.placeables ?? []) {
     if (!shouldShowSwitch(placeable)) continue;
+    visibleIds.add(placeable.document.uuid);
     switchLayer.addChild(createSwitchButton(placeable.document));
   }
+  pruneSwitchIcons(visibleIds);
 }
 
 function ensureSwitchLayer() {
@@ -862,6 +898,117 @@ function isLightingControlsActive() {
   return canvas?.lighting?.active === true || ui?.controls?.control?.name === "lighting";
 }
 
+const switchIcons = new Map();
+let switchIconTicker;
+
+function updateSwitchIcon(light, graphics) {
+  const source = light.getFlag(MODULE_ID, FLAGS.SWITCH_ICON);
+  const path = typeof source === "string" ? source.trim() : "";
+  let icon = switchIcons.get(light.uuid);
+  if (icon && icon.path !== path) {
+    removeSwitchIcon(light.uuid);
+    icon = null;
+  }
+  if (!path) return;
+  if (!icon) {
+    icon = createSwitchIcon(light, path);
+    switchIcons.set(light.uuid, icon);
+  }
+  icon.light = light;
+  icon.graphics = graphics;
+  updateSwitchIconAppearance(icon);
+  startIconTicker();
+}
+
+function createSwitchIcon(light, path) {
+  const image = document.createElement("img");
+  const icon = { image, frame: null, path, light, graphics: null, loaded: false };
+  image.className = "daavy-lightswitch-switch-icon";
+  image.alt = "";
+  image.draggable = false;
+  image.hidden = true;
+  image.onload = () => showSwitchIcon(icon);
+  image.onerror = () => restoreDefaultSwitchIcon(icon);
+  image.src = path;
+  document.body.append(image);
+  return icon;
+}
+
+function showSwitchIcon(icon) {
+  icon.loaded = true;
+  updateSwitchIconAppearance(icon);
+}
+
+function updateSwitchIconAppearance(icon) {
+  const off = isLightOff(icon.light);
+  if (icon.loaded && off && !icon.frame) icon.frame = createSwitchIconFrame(icon.image);
+  icon.image.hidden = !icon.loaded || off;
+  if (icon.frame) icon.frame.hidden = !icon.loaded || !off;
+  icon.graphics.visible = !icon.loaded;
+}
+
+function createSwitchIconFrame(image) {
+  const frame = document.createElement("canvas");
+  const scale = Math.min(56 / image.naturalWidth, 56 / image.naturalHeight, 1);
+  frame.width = Math.max(1, Math.round(image.naturalWidth * scale));
+  frame.height = Math.max(1, Math.round(image.naturalHeight * scale));
+  frame.className = "daavy-lightswitch-switch-icon daavy-lightswitch-switch-icon-off";
+  frame.setAttribute("aria-hidden", "true");
+  frame.style.left = image.style.left;
+  frame.style.top = image.style.top;
+  frame.getContext("2d").drawImage(image, 0, 0, frame.width, frame.height);
+  document.body.append(frame);
+  return frame;
+}
+
+function restoreDefaultSwitchIcon(icon) {
+  icon.loaded = false;
+  updateSwitchIconAppearance(icon);
+  console.warn(`${MODULE_ID} | Unable to load switch icon. Using the default switch.`);
+}
+
+function startIconTicker() {
+  if (switchIconTicker) return;
+  switchIconTicker = canvas.app.ticker;
+  switchIconTicker.add(positionSwitchIcons);
+  positionSwitchIcons();
+}
+
+function positionSwitchIcons() {
+  for (const { image, frame, light } of switchIcons.values()) {
+    const point = canvas.clientCoordinatesFromCanvas(light);
+    image.style.left = `${point.x}px`;
+    image.style.top = `${point.y}px`;
+    if (frame) {
+      frame.style.left = image.style.left;
+      frame.style.top = image.style.top;
+    }
+  }
+}
+
+function pruneSwitchIcons(visibleIds) {
+  for (const id of switchIcons.keys()) {
+    if (visibleIds.has(id)) continue;
+    removeSwitchIcon(id);
+  }
+  if (switchIcons.size || !switchIconTicker) return;
+  switchIconTicker.remove(positionSwitchIcons);
+  switchIconTicker = null;
+}
+
+function removeSwitchIcon(id) {
+  const { image, frame } = switchIcons.get(id);
+  image.onload = null;
+  image.onerror = null;
+  image.remove();
+  frame?.remove();
+  switchIcons.delete(id);
+}
+
+function clearSwitchIcons() {
+  pruneSwitchIcons(new Set());
+}
+
 function createSwitchButton(light) {
   const button = new PIXI.Container();
   const off = isLightOff(light);
@@ -880,6 +1027,7 @@ function createSwitchButton(light) {
     .drawCircle(0, 0, 14)
     .endFill();
   button.addChild(graphics);
+  updateSwitchIcon(light, graphics);
   button.on("pointerdown", (event) => handleSwitchPointerDown(event, light));
 
   return button;
@@ -896,11 +1044,13 @@ function handleSwitchPointerDown(event, light) {
 registerHooks({
   addCircuitTool,
   addPlayerToggleField,
+  clearSwitchIcons,
   normalizePlayerToggleFlag,
   refreshCircuitLines,
   refreshLightSwitches,
   resetCircuitInteraction,
   registerSocket,
   scheduleCanvasRefresh,
+  setDefaultSwitchIconFlag,
   setDefaultPlayerToggleFlag
 });

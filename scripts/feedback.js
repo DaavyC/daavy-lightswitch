@@ -12,7 +12,7 @@ const FEEDBACK_ACTIONS_CLASS = "daavy-lightswitch-settings-actions";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
-export class FeedbackForm extends HandlebarsApplicationMixin(ApplicationV2) {
+class FeedbackForm extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     id: "daavy-lightswitch-feedback",
     tag: "form",

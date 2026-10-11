@@ -7,29 +7,38 @@
       },
       "PlayerToggleDefault": {
         "Name": "Allow players by default",
-        "Hint": "Allow players to toggle newly created lights."
+        "Hint": "Allow players to turn new lights on and off."
+      },
+      "DefaultSwitchIcon": {
+        "Name": "Default switch icon",
+        "Hint": "Choose an image or GIF for new lights. Leave blank to use the default switch."
       },
       "ShowForGM": {
         "Name": "Show switches to GMs",
-        "Hint": "Show light switch icons to GMs."
+        "Hint": "Show switches when logged in as a GM."
       },
       "LimitInteractionDistance": {
         "Name": "Limit interaction range",
-        "Hint": "Require a controlled token within range to use a light switch."
+        "Hint": "Require a controlled token within range to use a switch."
       },
       "InteractionDistance": {
         "Name": "Maximum range",
-        "Hint": "Set the range in grid squares. The default is 5, and the range is 0 to 20."
+        "Hint": "Set the range from 0 to 20 grid squares. The default is 5."
       },
       "DistanceAffectsGM": {
         "Name": "Apply range limit to GMs",
-        "Hint": "Apply the range limit to GMs with a controlled token."
+        "Hint": "Apply the same limit to GMs when they control a token."
       }
     },
     "AmbientLightConfig": {
+      "Title": "Light Switch",
+      "SwitchIcon": {
+        "Label": "Switch icon",
+        "Hint": "Choose an image or GIF. Leave blank to use the default switch."
+      },
       "PlayerToggleEnabled": {
-        "Label": "Allow player toggle",
-        "Hint": "Allow players to turn this light and its connected circuit on or off."
+        "Label": "Allow players to use this switch",
+        "Hint": "Allow players to turn this light and all connected lights on or off."
       }
     },
     "Circuits": {

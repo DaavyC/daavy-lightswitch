@@ -5,12 +5,14 @@ import { organizeSettingsConfig, registerSettings } from "./settings.js";
 export function registerHooks({
   addCircuitTool,
   addPlayerToggleField,
+  clearSwitchIcons,
   normalizePlayerToggleFlag,
   refreshCircuitLines,
   refreshLightSwitches,
   resetCircuitInteraction,
   registerSocket,
   scheduleCanvasRefresh,
+  setDefaultSwitchIconFlag,
   setDefaultPlayerToggleFlag
 }) {
   Hooks.on("getSceneControlButtons", addCircuitTool);
@@ -28,10 +30,12 @@ export function registerHooks({
   function onReady() {
     registerSocket();
     Hooks.on("preCreateAmbientLight", setDefaultPlayerToggleFlag);
+    Hooks.on("preCreateAmbientLight", setDefaultSwitchIconFlag);
     Hooks.on("preUpdateAmbientLight", normalizePlayerToggleFlag);
     Hooks.on("renderAmbientLightConfig", addPlayerToggleField);
     Hooks.on("canvasReady", refreshCanvas);
     Hooks.on("canvasTearDown", resetCircuitInteraction);
+    Hooks.on("canvasTearDown", clearSwitchIcons);
     Hooks.on("canvasPan", refreshCanvas);
     Hooks.on("sightRefresh", refreshLightSwitches);
     Hooks.on("createAmbientLight", scheduleCanvasRefresh);

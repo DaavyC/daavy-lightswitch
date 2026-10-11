@@ -11,9 +11,20 @@ Adds clickable light switches to Foundry VTT maps.
 - Connected lights switch together as a circuit.
 - Switches appear when Lighting controls are inactive.
 
+## Light settings
+
+Each light has a **Light Switch** group with these options:
+
+| Setting | Effect |
+| --- | --- |
+| Allow players to use this switch | Allow players to turn the light and all connected lights on or off. |
+| Switch icon | Use an image or GIF as the switch. The default switch appears if the field is blank or the image cannot load. |
+
+Custom icons appear normally when lights are on and dim when lights are off. GIFs animate when the light is on and show their first frame when it is off.
+
 ## Circuits
 
-GMs edit circuits with the Circuits tool under Lighting controls. Only the clicked light needs Allow player toggle enabled. Its switch controls every connected light.
+GMs edit circuits with the **Circuits** tool under Lighting controls. Only the clicked light needs **Allow players to use this switch** enabled. Its switch controls every connected light.
 
 | Action | Control |
 | --- | --- |
@@ -28,10 +39,11 @@ GMs edit circuits with the Circuits tool under Lighting controls. Only the click
 
 | Setting | Effect |
 | --- | --- |
-| Allow players by default | Allow players to toggle newly created lights. |
+| Allow players by default | Allow players to turn new lights on and off. |
 | Show switches to GMs | Show switch icons to GMs. Enabled by default. |
+| Default switch icon | Set the initial image or GIF for new lights. Leave blank to use the default switch. |
 | Limit interaction range | Require a controlled token within range to use a switch. |
-| Maximum range | Set the distance in grid squares. The default is 5, and the range is 0 to 20. |
+| Maximum range | Set the range from 0 to 20 grid squares. The default is 5. |
 | Apply range limit to GMs | Apply the range limit to GMs. GMs without a controlled token bypass the limit. |
 
 ## Installation

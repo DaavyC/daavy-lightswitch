@@ -10,6 +10,7 @@ const SETTINGS_GROUPS = {
   Settings: [
     SETTINGS.PLAYER_TOGGLE_DEFAULT,
     SETTINGS.SHOW_FOR_GM,
+    SETTINGS.DEFAULT_SWITCH_ICON,
     SETTINGS.LIMIT_INTERACTION_DISTANCE
   ],
   [INTERACTION_DISTANCE_GROUP]: [
@@ -23,6 +24,7 @@ export function registerSettings(onChange) {
   registerBooleanSetting(SETTINGS.SHOW_FOR_GM, true, onChange);
   registerBooleanSetting(SETTINGS.LIMIT_INTERACTION_DISTANCE, false, onChange);
   registerBooleanSetting(SETTINGS.DISTANCE_AFFECTS_GM, false, onChange);
+  registerDefaultSwitchIconSetting();
 
   game.settings.register(MODULE_ID, SETTINGS.INTERACTION_DISTANCE, {
     name: `${getSettingI18nKey(SETTINGS.INTERACTION_DISTANCE)}.Name`,
@@ -41,6 +43,20 @@ export function registerSettings(onChange) {
   });
 }
 
+function registerDefaultSwitchIconSetting() {
+  const i18nKey = getSettingI18nKey(SETTINGS.DEFAULT_SWITCH_ICON);
+  game.settings.register(MODULE_ID, SETTINGS.DEFAULT_SWITCH_ICON, {
+    name: `${i18nKey}.Name`,
+    hint: `${i18nKey}.Hint`,
+    scope: "world",
+    config: true,
+    restricted: true,
+    type: String,
+    filePicker: "image",
+    default: ""
+  });
+}
+
 function registerBooleanSetting(key, defaultValue, onChange) {
   const i18nKey = getSettingI18nKey(key);
   game.settings.register(MODULE_ID, key, {
@@ -56,6 +72,10 @@ function registerBooleanSetting(key, defaultValue, onChange) {
 
 export function getPlayerToggleDefault() {
   return game.settings.get(MODULE_ID, SETTINGS.PLAYER_TOGGLE_DEFAULT);
+}
+
+export function getDefaultSwitchIcon() {
+  return game.settings.get(MODULE_ID, SETTINGS.DEFAULT_SWITCH_ICON).trim();
 }
 
 export function shouldShowForGM() {

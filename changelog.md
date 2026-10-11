@@ -1,3 +1,8 @@
+##### 1.3.0
+- Added a "Light Switch" group to each light's settings, with "Switch icon" for custom images and GIFs.
+- Added "Default switch icon" in module settings for new lights.
+- Custom icons dim when lights are off, and GIFs show their first frame. The default switch appears when "Switch icon" is blank or the custom image cannot load.
+
 ##### 1.2.1
 - Fixed player switch visibility and validation of player requests.
 - Fixed circuit selection errors and connections left behind after failed light updates.

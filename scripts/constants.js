@@ -3,6 +3,7 @@ export const I18N_PREFIX = "DAAVY_LIGHTSWITCH";
 
 export const SETTINGS = {
   PLAYER_TOGGLE_DEFAULT: "playerToggleDefault",
+  DEFAULT_SWITCH_ICON: "defaultSwitchIcon",
   SHOW_FOR_GM: "showForGM",
   LIMIT_INTERACTION_DISTANCE: "limitInteractionDistance",
   INTERACTION_DISTANCE: "interactionDistance",
@@ -11,6 +12,7 @@ export const SETTINGS = {
 
 export const FLAGS = {
   PLAYER_TOGGLE_ENABLED: "playerToggleEnabled",
+  SWITCH_ICON: "switchIcon",
   IS_OFF: "isOff",
   RESTORE_CONFIG: "restoreConfig",
   RESTORE_HIDDEN: "restoreHidden",
@@ -21,6 +23,7 @@ export const TOGGLE_QUERY = `${MODULE_ID}.toggleLight`;
 
 export const AMBIENT_LIGHT_TYPE = "AmbientLight";
 export const PLAYER_TOGGLE_PATH = `flags.${MODULE_ID}.${FLAGS.PLAYER_TOGGLE_ENABLED}`;
+export const SWITCH_ICON_PATH = `flags.${MODULE_ID}.${FLAGS.SWITCH_ICON}`;
 export const IS_OFF_PATH = `flags.${MODULE_ID}.${FLAGS.IS_OFF}`;
 export const RESTORE_CONFIG_PATH = `flags.${MODULE_ID}.${FLAGS.RESTORE_CONFIG}`;
 export const CIRCUIT_TOOL_NAME = "daavyLightswitchCircuits";

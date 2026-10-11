@@ -1,3 +1,22 @@
+.daavy-lightswitch-switch-icon {
+  position: fixed;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.daavy-lightswitch-switch-icon[hidden] {
+  display: none;
+}
+
+.daavy-lightswitch-switch-icon-off {
+  opacity: 0.6;
+  filter: grayscale(0.8) brightness(0.6);
+}
+
 .daavy-lightswitch-settings-group {
   border: 1px solid var(--color-border-light-primary, #a1a1a1);
   border-radius: 5px;
